@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Academia Halcones UV - Registro</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css">
+  <link rel="stylesheet" href="/assets/css/styles.css">
+  <link rel="stylesheet" href="/assets/css/registro.css">
+</head>
+<body class="bg-gray-50 font-sans min-h-screen flex flex-col justify-center items-center">
+  <header class="custom-bg text-white py-4 shadow-md w-full">
+    <div class="container mx-auto px-4 flex justify-between items-center">
+      <img src="/assets/img/logo.png" alt="Logo Academia Halcones UV" class="h-16 w-auto">
+    </div>
+  </header>
+
+  <main class="container mx-auto px-4 py-12 flex justify-center">
+    <!-- Sección de Registro -->
+    <section id="registro" class="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
+      <h2 class="text-2xl font-bold mb-6 text-center text-gray-700">Registro de Usuario</h2>
+      <form id="registro-form" class="space-y-6" action="/users/register" method="POST">
+        <div>
+          <label for="registro-email" class="block text-sm font-medium text-gray-700">Correo Electrónico:</label>
+          <input type="email" id="registro-email" name="email" class="mt-1 block w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" required>
+        </div>
+
+        <div>
+          <label for="registro-password" class="block text-sm font-medium text-gray-700">Contraseña:</label>
+          <input type="password" id="registro-password" name="password" class="mt-1 block w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" required>
+        </div>
+
+        <button type="submit" class="w-full custom-button text-white py-3 rounded-md font-semibold hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">Registrarse</button>
+
+        <div class="flex justify-between mt-6 text-sm">
+          <a href="/users/login" class="text-blue-600 hover:underline">Ya tengo cuenta</a>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <footer class="custom-bg text-white py-6 mt-auto w-full">
+    <div class="container mx-auto px-4 text-center">
+      <p>Academia Halcones UV - Todos los derechos reservados 2024</p>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById('registro-form').addEventListener('submit', async function(event) {
+      event.preventDefault();
+
+      const email = document.getElementById('registro-email').value;
+      const password = document.getElementById('registro-password').value;
+
+      // Validar que la contraseña cumpla con los requisitos de seguridad
+      const passwordRegex = /^(?=.*[A-Z])(?=.*[0-9!@#$%^&*])/;
+      if (!passwordRegex.test(password)) {
+        alert('La contraseña debe contener al menos una letra mayúscula y un número o signo.');
+        return;
+      }
+
+      try {
+        const response = await fetch('/users/register', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ email, password })
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+          alert(result.message); // Mensaje de éxito
+          window.location.href = result.redirectUrl; // Redirigir al inicio de sesión
+        } else {
+          alert(result.message); // Mensaje de error
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('Error al registrar el usuario. Inténtelo de nuevo más tarde.');
+      }
+    });
+  </script>
+</body>
+</html>

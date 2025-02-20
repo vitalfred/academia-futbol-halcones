@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Detalles del Alumno</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css">
+  <link rel="stylesheet" href="/assets/css/styles.css">
+</head>
+<body class="bg-gray-50 font-sans min-h-screen flex flex-col">
+  <header class="custom-bg text-white py-4 shadow-md">
+    <div class="container mx-auto px-4 flex justify-between items-center">
+      <img src="/assets/img/logo.png" alt="Logo Academia Halcones UV" class="h-16 w-auto">
+      <div>
+        <button onclick="window.location.href='/admin/alumnos'" class="custom-button text-white py-2 px-4 rounded-md font-semibold hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+          Regresar 
+        </button>
+
+      </div>
+    </div>
+  </header>
+
+  <main class="container mx-auto px-4 py-12 flex-grow">
+    <h1 class="text-3xl font-bold mb-8 text-gray-700 text-center">Detalles del Alumno</h1>
+    
+    <form action="/admin/alumnos/<%= alumno.id %>/editar" method="POST" class="space-y-6">
+      <!-- Curso de Interés -->
+      <div>
+        <label for="curso_interes" class="block text-sm font-medium text-gray-700">Curso de Interés:</label>
+        <input 
+          type="text" 
+          id="curso_interes" 
+          name="curso_interes" 
+          value="<%= alumno.curso_interes %>" 
+          class="border border-gray-300 p-2 w-full rounded-md" 
+          required
+          pattern="^(curso1|curso2)$"
+          title="Sólo se permite curso1 o curso2 en minúsculas">
+      </div>
+      
+      <!-- Categoría Horario -->
+      <div>
+        <label for="categoria_horario" class="block text-sm font-medium text-gray-700">Categoría Horario:</label>
+        <input 
+          type="text" 
+          id="categoria_horario" 
+          name="categoria_horario" 
+          value="<%= alumno.categoria_horario %>" 
+          class="border border-gray-300 p-2 w-full rounded-md" 
+          required
+          pattern="^(14-17|10-13|6-9|4-5)$"
+          title="Debe ser exactamente una de las siguientes opciones: 14-17, 10-13, 6-9, 4-5">
+      </div>
+
+      <!-- Nombre del Alumno -->
+      <div>
+        <label for="nombre_nino" class="block text-sm font-medium text-gray-700">Nombre del Alumno:</label>
+        <input type="text" id="nombre_nino" name="nombre_nino" value="<%= alumno.nombre_nino %>" class="border border-gray-300 p-2 w-full rounded-md" required>
+      </div>
+
+      <!-- Edad -->
+      <div>
+        <label for="edad" class="block text-sm font-medium text-gray-700">Edad:</label>
+        <input type="number" id="edad" name="edad" value="<%= alumno.edad %>" class="border border-gray-300 p-2 w-full rounded-md" required>
+      </div>
+
+      <!-- Fecha de Nacimiento -->
+      <div>
+        <label for="fecha_nacimiento" class="block text-sm font-medium text-gray-700">Fecha de Nacimiento:</label>
+        <input type="date" id="fecha_nacimiento" name="fecha_nacimiento" value="<%= alumno.fecha_nacimiento.toISOString().split('T')[0] %>" class="border border-gray-300 p-2 w-full rounded-md" required>
+      </div>
+
+      <!-- Sexo -->
+      <div>
+        <label for="sexo" class="block text-sm font-medium text-gray-700">Sexo:</label>
+        <select id="sexo" name="sexo" class="border border-gray-300 p-2 w-full rounded-md">
+          <option value="Masculino" <%= alumno.sexo === 'Masculino' ? 'selected' : '' %>>Masculino</option>
+          <option value="Femenino" <%= alumno.sexo === 'Femenino' ? 'selected' : '' %>>Femenino</option>
+        </select>
+      </div>
+
+      <!-- Talla Camiseta -->
+      <div>
+        <label for="talla_camiseta" class="block text-sm font-medium text-gray-700">Talla de Camiseta:</label>
+        <input 
+          type="text" 
+          id="talla_camiseta" 
+          name="talla_camiseta" 
+          value="<%= alumno.talla_camiseta %>" 
+          class="border border-gray-300 p-2 w-full rounded-md"
+          pattern="^(XG|G|M|CH|XCH)$"
+          title="Debe ser una de las siguientes: XG, G, M, CH, XCH">
+      </div>
+
+      <!-- Estatura y Peso -->
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label for="estatura" class="block text-sm font-medium text-gray-700">Estatura (cm):</label>
+          <input type="number" id="estatura" name="estatura" step="0.01" value="<%= alumno.estatura %>" class="border border-gray-300 p-2 w-full rounded-md">
+        </div>
+        <div>
+          <label for="peso" class="block text-sm font-medium text-gray-700">Peso (kg):</label>
+          <input type="number" id="peso" name="peso" step="0.01" value="<%= alumno.peso %>" class="border border-gray-300 p-2 w-full rounded-md">
+        </div>
+      </div>
+
+      <!-- Centro Educativo -->
+      <div>
+        <label for="centro_educativo" class="block text-sm font-medium text-gray-700">Centro Educativo:</label>
+        <input type="text" id="centro_educativo" name="centro_educativo" value="<%= alumno.centro_educativo %>" class="border border-gray-300 p-2 w-full rounded-md">
+      </div>
+
+      <!-- Seguro Médico -->
+      <div>
+        <label for="seguro_medico" class="block text-sm font-medium text-gray-700">¿Tiene Seguro Médico?</label>
+        <select id="seguro_medico" name="seguro_medico" class="border border-gray-300 p-2 w-full rounded-md">
+          <option value="true" <%= alumno.seguro_medico ? 'selected' : '' %>>Sí</option>
+          <option value="false" <%= !alumno.seguro_medico ? 'selected' : '' %>>No</option>
+        </select>
+      </div>
+
+      <div>
+        <label for="nombre_seguro" class="block text-sm font-medium text-gray-700">Nombre del Seguro Médico:</label>
+        <input type="text" id="nombre_seguro" name="nombre_seguro" value="<%= alumno.nombre_seguro %>" class="border border-gray-300 p-2 w-full rounded-md">
+      </div>
+
+      <!-- Nombre del Tutor -->
+      <div>
+        <label for="nombre_tutor" class="block text-sm font-medium text-gray-700">Nombre del Tutor:</label>
+        <input type="text" id="nombre_tutor" name="nombre_tutor" value="<%= alumno.nombre_tutor %>" class="border border-gray-300 p-2 w-full rounded-md">
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label for="telefono_contacto" class="block text-sm font-medium text-gray-700">Teléfono de Contacto:</label>
+          <input type="text" id="telefono_contacto" name="telefono_contacto" value="<%= alumno.telefono_contacto %>" class="border border-gray-300 p-2 w-full rounded-md">
+        </div>
+        <div>
+          <label for="correo_electronico" class="block text-sm font-medium text-gray-700">Correo Electrónico:</label>
+          <input type="email" id="correo_electronico" name="correo_electronico" value="<%= alumno.correo_electronico %>" class="border border-gray-300 p-2 w-full rounded-md">
+        </div>
+      </div>
+
+      <!-- Dirección -->
+      <div>
+        <label for="direccion" class="block text-sm font-medium text-gray-700">Dirección:</label>
+        <textarea id="direccion" name="direccion" rows="3" class="border border-gray-300 p-2 w-full rounded-md"><%= alumno.direccion %></textarea>
+      </div>
+
+      <!-- Campos adicionales -->
+      <h2 class="text-xl font-semibold mt-8 text-gray-700">Información Médica y Deportiva</h2>
+
+      <div>
+        <label for="alergias" class="block text-sm font-medium text-gray-700">¿Tiene Alergias?</label>
+        <select id="alergias" name="alergias" class="border border-gray-300 p-2 w-full rounded-md">
+          <option value="true" <%= alumno.alergias ? 'selected' : '' %>>Sí</option>
+          <option value="false" <%= !alumno.alergias ? 'selected' : '' %>>No</option>
+        </select>
+      </div>
+
+      <div>
+        <label for="detalle_alergias" class="block text-sm font-medium text-gray-700">Detalle Alergias:</label>
+        <textarea id="detalle_alergias" name="detalle_alergias" rows="3" class="border border-gray-300 p-2 w-full rounded-md"><%= alumno.detalle_alergias %></textarea>
+      </div>
+
+      <div>
+        <label for="alergico_medicamento" class="block text-sm font-medium text-gray-700">¿Alérgico a algún medicamento?</label>
+        <select id="alergico_medicamento" name="alergico_medicamento" class="border border-gray-300 p-2 w-full rounded-md">
+          <option value="true" <%= alumno.alergico_medicamento ? 'selected' : '' %>>Sí</option>
+          <option value="false" <%= !alumno.alergico_medicamento ? 'selected' : '' %>>No</option>
+        </select>
+      </div>
+
+      <div>
+        <label for="detalle_medicamento" class="block text-sm font-medium text-gray-700">Detalle Medicamento:</label>
+        <textarea id="detalle_medicamento" name="detalle_medicamento" rows="3" class="border border-gray-300 p-2 w-full rounded-md"><%= alumno.detalle_medicamento %></textarea>
+      </div>
+
+      <div>
+        <label for="actividad_fisica" class="block text-sm font-medium text-gray-700">¿Realiza Actividad Física?</label>
+        <select id="actividad_fisica" name="actividad_fisica" class="border border-gray-300 p-2 w-full rounded-md">
+          <option value="true" <%= alumno.actividad_fisica ? 'selected' : '' %>>Sí</option>
+          <option value="false" <%= !alumno.actividad_fisica ? 'selected' : '' %>>No</option>
+        </select>
+      </div>
+
+      <div>
+        <label for="detalle_deporte" class="block text-sm font-medium text-gray-700">Detalle Deporte:</label>
+        <textarea id="detalle_deporte" name="detalle_deporte" rows="3" class="border border-gray-300 p-2 w-full rounded-md"><%= alumno.detalle_deporte %></textarea>
+      </div>
+
+      <div>
+        <label for="practico_futbol" class="block text-sm font-medium text-gray-700">¿Practicó Fútbol Antes?</label>
+        <select id="practico_futbol" name="practico_futbol" class="border border-gray-300 p-2 w-full rounded-md">
+          <option value="true" <%= alumno.practico_futbol ? 'selected' : '' %>>Sí</option>
+          <option value="false" <%= !alumno.practico_futbol ? 'selected' : '' %>>No</option>
+        </select>
+      </div>
+
+      <div>
+        <label for="equipos_participados" class="block text-sm font-medium text-gray-700">Equipos en los que ha participado:</label>
+        <textarea id="equipos_participados" name="equipos_participados" rows="3" class="border border-gray-300 p-2 w-full rounded-md"><%= alumno.equipos_participados %></textarea>
+      </div>
+
+      <div>
+        <label for="posicion_campo" class="block text-sm font-medium text-gray-700">Posición en el Campo:</label>
+        <input type="text" id="posicion_campo" name="posicion_campo" value="<%= alumno.posicion_campo %>" class="border border-gray-300 p-2 w-full rounded-md">
+      </div>
+
+      <div>
+        <label for="habilidades" class="block text-sm font-medium text-gray-700">Habilidades (formato JSON):</label>
+        <textarea id="habilidades" name="habilidades" rows="3" class="border border-gray-300 p-2 w-full rounded-md"><%= JSON.stringify(alumno.habilidades) %></textarea>
+      </div>
+
+      <div>
+        <label for="enterado" class="block text-sm font-medium text-gray-700">¿Cómo se enteró?</label>
+        <input type="text" id="enterado" name="enterado" value="<%= alumno.enterado %>" class="border border-gray-300 p-2 w-full rounded-md">
+      </div>
+
+      <div>
+        <label for="otra_fuente" class="block text-sm font-medium text-gray-700">Otra Fuente:</label>
+        <input type="text" id="otra_fuente" name="otra_fuente" value="<%= alumno.otra_fuente %>" class="border border-gray-300 p-2 w-full rounded-md">
+      </div>
+
+      <div>
+        <label for="hermano_inscrito" class="block text-sm font-medium text-gray-700">¿Tiene Hermano Inscrito?</label>
+        <select id="hermano_inscrito" name="hermano_inscrito" class="border border-gray-300 p-2 w-full rounded-md">
+          <option value="true" <%= alumno.hermano_inscrito ? 'selected' : '' %>>Sí</option>
+          <option value="false" <%= !alumno.hermano_inscrito ? 'selected' : '' %>>No</option>
+        </select>
+      </div>
+
+      <div>
+        <label for="nombre_hermano" class="block text-sm font-medium text-gray-700">Nombre del Hermano:</label>
+        <input type="text" id="nombre_hermano" name="nombre_hermano" value="<%= alumno.nombre_hermano %>" class="border border-gray-300 p-2 w-full rounded-md">
+      </div>
+
+      <div>
+        <label for="expectativas" class="block text-sm font-medium text-gray-700">Expectativas:</label>
+        <textarea id="expectativas" name="expectativas" rows="3" class="border border-gray-300 p-2 w-full rounded-md"><%= alumno.expectativas %></textarea>
+      </div>
+
+      <div>
+        <label for="matricula" class="block text-sm font-medium text-gray-700">Matrícula:</label>
+        <input 
+          type="text" 
+          id="matricula" 
+          name="matricula" 
+          value="<%= alumno.matricula || '' %>" 
+          class="border border-gray-300 p-2 w-full rounded-md" 
+          placeholder="Ejemplo: zS21024145" 
+          maxlength="50" 
+          required
+        >
+      </div>
+
+      <!-- Archivos para Descargar -->
+      <div class="mt-6">
+        <h2 class="text-lg font-semibold text-gray-700">Documentos:</h2>
+        <div class="flex space-x-4">
+            <a href="/admin/alumnos/<%= alumno.id %>/descargar-acta" class="custom-button py-2 px-4 rounded-md">Descargar Acta de Nacimiento</a>
+            <a href="/admin/alumnos/<%= alumno.id %>/descargar-certificado" class="custom-button py-2 px-4 rounded-md">Descargar Certificado Médico</a>
+            <!-- Nuevo botón para descargar detalles completos en PDF -->
+            <a href="/admin/detalles/alumnos/<%= alumno.id %>/descargar-detalles" class="custom-button py-2 px-4 rounded-md">
+              Descargar PDF
+            </a>
+        </div>
+      </div>
+
+      <!-- Botones de Acción -->
+      <div class="mt-6 flex justify-end space-x-4">
+        <button type="button" onclick="window.history.back()" class="logout-button py-2 px-4 rounded-md">Cancelar</button>
+        <button type="submit" class="custom-button py-2 px-4 rounded-md">Guardar Cambios</button>
+      </div>
+    </form>
+  </main>
+
+  <footer class="custom-bg text-white py-6 mt-auto w-full">
+    <div class="container mx-auto px-4 text-center">
+      <p>Academia Halcones UV - Todos los derechos reservados 2024</p>
+    </div>
+  </footer>
+</body>
+</html>

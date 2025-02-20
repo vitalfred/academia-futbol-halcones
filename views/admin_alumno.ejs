@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestión de Alumnos</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css">
+  <link rel="stylesheet" href="/assets/css/styles.css">
+  <style>
+    .invisible-button {
+      opacity: 0;
+      transition: opacity 0.3s ease-in-out;
+    }
+    tr:hover .invisible-button {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body class="bg-gray-50 font-sans min-h-screen flex flex-col">
+    <header class="custom-bg text-white py-4 shadow-md">
+      <div class="container mx-auto px-4 flex justify-between items-center">
+        <img src="/assets/img/logo.png" alt="Logo Academia Halcones UV" class="h-16 w-auto">
+        <div>
+            <button onclick="window.location.href='/admin/panel'" class="custom-button text-white py-2 px-4 rounded-md font-semibold hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                Regresar 
+              </button>
+              
+          <button onclick="cerrarSesion()" class="logout-button text-white py-2 px-4 rounded-md font-semibold hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+            Cerrar Sesión
+          </button>
+        </div>
+      </div>
+    </header>
+
+  <main class="container mx-auto px-4 py-12 flex-grow">
+    <h1 class="text-3xl font-bold mb-8 text-gray-700 text-center">Gestión de Alumnos</h1>
+
+    <!-- Barra de búsqueda -->
+    <div class="mt-4 mb-8">
+      <label for="search" class="block text-sm font-medium text-gray-700">Buscar Alumno:</label>
+      <input 
+        type="text" 
+        id="search" 
+        class="border border-gray-300 p-2 w-full rounded-md" 
+        placeholder="Buscar por nombre, correo, tutor o teléfono..."
+        oninput="filtrarAlumnos()">
+    </div>
+
+    <!-- Tabla de alumnos -->
+    <section>
+      <table id="tabla-alumnos" class="table-auto w-full border-collapse border border-gray-300">
+        <thead>
+          <tr class="bg-gray-100">
+            <th class="border border-gray-300 px-4 py-2 text-left">Nombre</th>
+            <th class="border border-gray-300 px-4 py-2 text-left">Edad</th>
+            <th class="border border-gray-300 px-4 py-2 text-left">Tutor</th>
+            <th class="border border-gray-300 px-4 py-2 text-left">Correo</th>
+            <th class="border border-gray-300 px-4 py-2 text-left">Teléfono</th>
+            <th class="border border-gray-300 px-4 py-2 text-left">Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="alumnos-tbody">
+          <% alumnos.forEach(alumno => { %>
+            <tr class="hover:bg-gray-50">
+              <td class="border border-gray-300 px-4 py-2"><%= alumno.nombre_nino %></td>
+              <td class="border border-gray-300 px-4 py-2"><%= alumno.edad %></td>
+              <td class="border border-gray-300 px-4 py-2"><%= alumno.nombre_tutor %></td>
+              <td class="border border-gray-300 px-4 py-2"><%= alumno.correo_electronico %></td>
+              <td class="border border-gray-300 px-4 py-2"><%= alumno.telefono_contacto %></td>
+              <td class="border border-gray-300 px-4 py-2 flex space-x-2">
+                <button
+                onclick="window.location.href='/admin/alumnos/<%= alumno.id %>'"
+                class="custom-button py-2 px-4 rounded-md">
+                Detalles
+              </button>
+                <button
+                onclick="confirmarEliminacion('<%= alumno.id %>')"
+                class="logout-button py-2 px-4 rounded-md invisible-button">
+                Eliminar
+              </button>
+              </td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </section>
+  </main>
+
+  <footer class="custom-bg text-white py-6 mt-auto w-full">
+    <div class="container mx-auto px-4 text-center">
+      <p>Academia Halcones UV - Todos los derechos reservados 2024</p>
+    </div>
+  </footer>
+
+  <script>
+    function cerrarSesion() {
+      alert('Sesión cerrada correctamente');
+      window.location.href = '/users/logout';
+    }
+
+    function filtrarAlumnos() {
+      const searchInput = document.getElementById('search').value.toLowerCase();
+      const rows = document.querySelectorAll('#alumnos-tbody tr');
+      rows.forEach(row => {
+        const nombre = row.children[0].textContent.toLowerCase();
+        const correo = row.children[3].textContent.toLowerCase();
+        const tutor = row.children[2].textContent.toLowerCase();
+        const telefono = row.children[4].textContent.toLowerCase();
+
+        if (
+          nombre.includes(searchInput) || 
+          correo.includes(searchInput) || 
+          tutor.includes(searchInput) || 
+          telefono.includes(searchInput)
+        ) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+    }
+
+    function confirmarEliminacion(alumnoId) {
+      const confirmacion = confirm('¿Estás seguro de que deseas eliminar este alumno?');
+      if (confirmacion) {
+        fetch(`/admin/alumnos/${alumnoId}/eliminar`, {
+          method: 'DELETE'
+        })
+        .then(response => {
+          if (response.ok) {
+            alert('Alumno eliminado exitosamente.');
+            window.location.reload();
+          } else {
+            alert('Error al eliminar al alumno.');
+          }
+        })
+        .catch(error => console.error('Error al eliminar alumno:', error));
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,64 @@
+/* Configuración básica */
+body {
+  font-family: 'Roboto', sans-serif;
+}
+
+.custom-bg {
+  background: linear-gradient(135deg, #005baa 0%, #00ab4f 100%);
+}
+
+.custom-button {
+  background-color: #005baa;
+  transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+.custom-button:hover {
+  background-color: #004a99;
+  transform: scale(1.05);
+}
+
+.logout-button {
+  background-color: #ff5c5c;
+  transition: background-color 0.3s ease;
+}
+
+.logout-button:hover {
+  background-color: #e04e4e;
+}
+
+.footer {
+  text-align: center;
+  padding: 10px;
+  color: white;
+}
+
+/* Botón del alumno: se desplaza cuando el mouse está sobre el grupo */
+.group:hover .custom-button {
+  transform: translateX(-50px); /* Se mueve hacia la izquierda */
+}
+
+/* Botón de eliminar: aparece solo al pasar el mouse */
+.group:hover .logout-button {
+  opacity: 1; /* Se hace visible */
+  visibility: visible;
+  pointer-events: auto;
+}
+
+/* Transiciones suaves */
+.custom-button,
+.logout-button {
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+/* Botón de cerrar sesión (logout-session) se mantiene siempre visible */
+.logout-session {
+  display: inline-block;
+  opacity: 1 !important;
+  visibility: visible !important;
+  background-color: #ff5c5c;
+  transition: background-color 0.3s ease;
+}
+
+.logout-session:hover {
+  background-color: #e04e4e;
+}

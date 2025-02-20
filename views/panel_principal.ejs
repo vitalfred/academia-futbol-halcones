@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Academia Halcones UV - Panel Principal</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css">
+  <link rel="stylesheet" href="/assets/css/panel_principal.css">
+  <style>
+    .group:hover .custom-button {
+      transform: translateX(-50px); /* Mover el botón principal a la izquierda */
+    }
+    .group:hover .logout-button {
+      opacity: 1; /* Mostrar el botón de eliminar */
+    }
+    .custom-button, .logout-button {
+      transition: transform 0.3s ease, opacity 0.3s ease;
+    }
+    .logout-button {
+      opacity: 0; /* Ocultar por defecto */
+    }
+    .logout-session {
+      display: inline-block;
+      opacity: 1;
+      visibility: visible;
+      background-color: #ff5c5c;
+      transition: background-color 0.3s ease;
+    }
+    .logout-session:hover {
+      background-color: #e04e4e;
+    }
+  </style>
+</head>  
+<header class="custom-bg text-white py-4 shadow-md">
+    <div class="container mx-auto px-4 flex justify-between items-center">
+      <img src="/assets/img/logo.png" alt="Logo Academia Halcones UV" class="h-16 w-auto mr-4">
+      <div>
+        <button 
+        onclick="cerrarSesion()" 
+        class="logout-button logout-session text-white py-2 px-4 rounded-md font-semibold">
+        Cerrar Sesión
+      </button>
+      </div>
+    </div>
+  </header>
+  
+<body class="bg-gray-50 font-sans min-h-screen flex flex-col">
+
+  <main class="container mx-auto px-4 py-12 flex flex-col items-center space-y-6 flex-grow">
+    <!-- Botón Registrar Alumno -->
+    <button id="registrar-alumno" class="custom-button text-white py-3 px-6 rounded-md font-semibold hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+      Registrar Alumno
+    </button>
+
+    <!-- Contenedor de Botones de Alumnos Registrados -->
+    <div id="alumnos-registrados" class="w-full max-w-md space-y-4">
+      <% alumnos.forEach(alumno => { %>
+        <div class="relative group flex justify-center items-center">
+          <!-- Botón del alumno -->
+          <button 
+            class="custom-button text-white py-3 px-6 rounded-md font-semibold hover:bg-blue-700 focus:outline-none transition-all duration-300 transform group-hover:translate-x-10" 
+            onclick="window.location.href='/alumno/<%= alumno.id %>'">
+            <%= alumno.nombre_nino %>
+          </button>
+          <!-- Botón de eliminar (oculto por defecto) -->
+          <button 
+            class="absolute left-full ml-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 logout-button text-white py-2 px-4 rounded-md font-semibold hover:bg-red-700 focus:outline-none" 
+            onclick="confirmarEliminarAlumno('<%= alumno.id %>', '<%= alumno.nombre_nino %>')">
+            Eliminar
+          </button>
+        </div>
+      <% }); %>
+    </div>
+  </main>
+
+  <footer class="custom-bg text-white py-6 mt-auto w-full">
+    <div class="container mx-auto px-4 text-center">
+      <p>Academia Halcones UV - Todos los derechos reservados 2024</p>
+    </div>
+  </footer>
+
+  <script>
+    function confirmarEliminarAlumno(alumnoId, nombreAlumno) {
+      const confirmar = confirm(`¿Estás seguro de que deseas eliminar al alumno "${nombreAlumno}"? Esta acción no se puede deshacer.`);
+      if (confirmar) {
+        fetch(`/alumno/${alumnoId}`, {
+          method: 'DELETE',
+        })
+          .then(response => {
+            if (response.ok) {
+              alert('Alumno eliminado exitosamente.');
+              window.location.reload();
+            } else {
+              alert('Error al eliminar al alumno. Inténtelo de nuevo más tarde.');
+            }
+          })
+          .catch(error => console.error('Error al eliminar el alumno:', error));
+      }
+    }
+
+    function cerrarSesion() {
+      alert('Sesión cerrada correctamente');
+      window.location.href = '/users/logout';
+    }
+
+    document.getElementById('registrar-alumno').addEventListener('click', function() {
+      window.location.href = '/registro-alumno';
+    });
+  </script>
+</body>
+</html>

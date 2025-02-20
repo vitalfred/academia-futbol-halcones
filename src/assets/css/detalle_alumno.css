@@ -1,0 +1,37 @@
+body {
+    font-family: 'Roboto', sans-serif;
+  }
+  
+  .custom-bg {
+    background: linear-gradient(135deg, #005baa 0%, #00ab4f 100%);
+  }
+  
+  .custom-button {
+    background-color: #005baa;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+  }
+  
+  .custom-button:hover {
+    background-color: #004a99;
+    transform: scale(1.05);
+  }
+  
+  .logout-button {
+    background-color: #ff5c5c;
+    transition: background-color 0.3s ease;
+  }
+  
+  .logout-button:hover {
+    background-color: #e04e4e;
+  }
+  
+  .inscripcion-exitosa {
+    background-color: #d1e7dd;
+    color: #0f5132;
+    border-left: 4px solid #0f5132;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    font-weight: bold;
+    text-align: center;
+  }
+  

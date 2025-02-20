@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Academia Halcones UV - Panel de Administración</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css">
+  <link rel="stylesheet" href="/assets/css/styles.css">
+ 
+</head>
+<body class="bg-gray-50 font-sans min-h-screen flex flex-col">
+  <header class="custom-bg text-white py-4 shadow-md">
+    <div class="container mx-auto px-4 flex justify-between items-center">
+      <img src="/assets/img/logo.png" alt="Logo Academia Halcones UV" class="h-16 w-auto">
+      <button onclick="cerrarSesion()" class="logout-button text-white py-2 px-4 rounded-md font-semibold hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">Cerrar Sesión</button>
+    </div>
+  </header>
+
+  <main class="container mx-auto px-4 py-12 flex flex-col items-center space-y-6 flex-grow">
+    <h1 class="text-3xl font-bold mb-8 text-gray-700">Panel de Administración</h1>
+    <!-- Opciones de Gestión -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl">
+      <!-- Gestión de Usuarios -->
+      <button 
+        onclick="window.location.href='/admin/usuarios'" 
+        class="custom-button text-white py-6 px-8 rounded-md font-semibold hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 w-full">
+        Gestión de Usuarios
+      </button>
+      
+      <!-- Gestión de Alumnos -->
+      <button onclick="window.location.href='/admin/alumnos'" 
+              class="custom-button text-white py-6 px-8 rounded-md font-semibold hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 w-full">
+        Gestionar Alumnos
+      </button>
+
+      <!-- Gestion de comprobantes -->
+      <button
+       onclick="window.location.href='/admin/comprobantes'"
+       class="custom-button text-white py-6 px-8 rounded-md font-semibold hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 w-full"
+      >
+      Gestión de Comprobantes
+      </button>
+      
+      <!-- Reportes -->
+      <button
+  onclick="window.location.href='/admin/reportes'"
+  class="custom-button text-white py-6 px-8 rounded-md font-semibold hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 w-full"
+>
+  Generar Reportes
+</button>
+
+    </div>
+  </main>
+
+  <footer class="custom-bg text-white py-6 mt-auto w-full">
+    <div class="container mx-auto px-4 text-center">
+      <p>Academia Halcones UV - Todos los derechos reservados 2024</p>
+    </div>
+  </footer> 
+
+  <script>
+    function cerrarSesion() {
+      alert('Sesión cerrada correctamente');
+      window.location.href = '/users/logout';
+    }
+  </script>
+</body>
+</html>

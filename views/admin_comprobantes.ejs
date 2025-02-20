@@ -1,0 +1,167 @@
+<!DOCTYPE html> 
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestión de Comprobantes</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css">
+  <link rel="stylesheet" href="/assets/css/styles.css">
+</head>
+<body class="bg-gray-50 font-sans min-h-screen flex flex-col">
+  <header class="custom-bg text-white py-4 shadow-md">
+    <div class="container mx-auto px-4 flex justify-between items-center">
+      <img src="/assets/img/logo.png" alt="Logo Academia Halcones UV" class="h-16 w-auto">
+      <div>
+        <button onclick="window.location.href='/admin-panel/<%= adminId %>'" class="logout-button text-white py-2 px-4 rounded-md">Volver al Panel</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container mx-auto px-4 py-12 flex-grow">
+    <h1 class="text-3xl font-bold mb-8 text-gray-700 text-center">Gestión de Comprobantes</h1>
+
+    <!-- Bloque para mostrar mensaje de error, si existe -->
+    <% if (typeof error !== 'undefined' && error) { %>
+      <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-6">
+        <%= error %>
+      </div>
+    <% } %>
+
+    <h2 class="text-xl font-semibold mb-6 text-gray-700">Listado de Comprobantes</h2>
+
+    <!-- Tabla de Comprobantes Aprobados -->
+    <h3 class="text-lg font-semibold mb-4 text-green-600">Aprobados</h3>
+    <table class="table-auto w-full border-collapse border border-gray-300 mb-8">
+      <thead>
+        <tr class="bg-gray-100">
+          <th class="border border-gray-300 px-4 py-2">Alumno</th>
+          <th class="border border-gray-300 px-4 py-2">Correo</th>
+          <th class="border border-gray-300 px-4 py-2">Estado</th>
+          <th class="border border-gray-300 px-4 py-2">Periodo</th>
+          <th class="border border-gray-300 px-4 py-2">Vencimiento</th>
+          <th class="border border-gray-300 px-4 py-2">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% aprobados.forEach((comprobante) => { %>
+          <tr>
+            <td class="border border-gray-300 px-4 py-2"><%= comprobante.nombre_nino %></td>
+            <td class="border border-gray-300 px-4 py-2"><%= comprobante.correo_electronico %></td>
+            <td class="border border-gray-300 px-4 py-2 status-approved">Aprobado</td>
+            <td class="border border-gray-300 px-4 py-2"><%= comprobante.periodo || 'N/A' %></td>
+            <td class="border border-gray-300 px-4 py-2">
+              <%= comprobante.fecha_vencimiento ? new Date(comprobante.fecha_vencimiento).toLocaleDateString() : 'N/A' %>
+            </td>
+            <td class="border border-gray-300 px-4 py-2">
+              <!-- Se usa la ruta controlada para descargar -->
+              <a href="/admin/comprobantes/<%= comprobante.id %>/descargar" class="custom-button py-2 px-4 rounded-md">Descargar</a>
+            </td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+
+    <!-- Tabla de Comprobantes Pendientes -->
+    <h3 class="text-lg font-semibold mb-4 text-orange-600">Pendientes</h3>
+    <table class="table-auto w-full border-collapse border border-gray-300 mb-8">
+      <thead>
+        <tr class="bg-gray-100">
+          <th class="border border-gray-300 px-4 py-2">Alumno</th>
+          <th class="border border-gray-300 px-4 py-2">Correo</th>
+          <th class="border border-gray-300 px-4 py-2">Estado</th>
+          <th class="border border-gray-300 px-4 py-2">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% pendientes.forEach((comprobante) => { %>
+          <tr>
+            <td class="border border-gray-300 px-4 py-2"><%= comprobante.nombre_nino %></td>
+            <td class="border border-gray-300 px-4 py-2"><%= comprobante.correo_electronico %></td>
+            <td class="border border-gray-300 px-4 py-2 status-pending">Pendiente</td>
+            <td class="border border-gray-300 px-4 py-2 flex gap-2">
+              <!-- Se usa la ruta controlada para descargar -->
+              <a href="/admin/comprobantes/<%= comprobante.id %>/descargar" class="custom-button py-2 px-4 rounded-md">Descargar</a>
+              <form action="/admin/comprobantes/<%= comprobante.id %>/aprobar" method="POST">
+                <select name="periodo" required>
+                  <option value="" disabled selected>Seleccionar periodo</option>
+                  <option value="un_minuto">Un Minuto (Pruebas)</option>
+                  <option value="mensual">Mensual (Fin de mes)</option>
+                  <option value="bimestral">Bimestral (Fin de segundo mes)</option>
+                </select>
+                <button type="submit" class="custom-button py-2 px-4 rounded-md">Aprobar</button>
+              </form>
+              <form action="/admin/comprobantes/<%= comprobante.id %>/rechazar" method="POST">
+                <button type="submit" class="logout-button py-2 px-4 rounded-md">Rechazar</button>
+              </form>
+            </td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+
+    <!-- Tabla de Comprobantes Rechazados -->
+    <h3 class="text-lg font-semibold mb-4 text-red-600">Rechazados</h3>
+    <table class="table-auto w-full border-collapse border border-gray-300 mb-8">
+      <thead>
+        <tr class="bg-gray-100">
+          <th class="border border-gray-300 px-4 py-2">Alumno</th>
+          <th class="border border-gray-300 px-4 py-2">Correo</th>
+          <th class="border border-gray-300 px-4 py-2">Estado</th>
+          <th class="border border-gray-300 px-4 py-2">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% rechazados.forEach((comprobante) => { %>
+          <tr>
+            <td class="border border-gray-300 px-4 py-2"><%= comprobante.nombre_nino %></td>
+            <td class="border border-gray-300 px-4 py-2"><%= comprobante.correo_electronico %></td>
+            <td class="border border-gray-300 px-4 py-2 status-rejected">Rechazado</td>
+            <td class="border border-gray-300 px-4 py-2 flex gap-2">
+              <!-- Se usa la ruta controlada para descargar -->
+              <a href="/admin/comprobantes/<%= comprobante.id %>/descargar" class="custom-button py-2 px-4 rounded-md">Descargar</a>
+              <form action="/admin/comprobantes/<%= comprobante.id %>/eliminar" method="POST">
+                <button type="submit" class="logout-button py-2 px-4 rounded-md">Eliminar</button>
+              </form>
+            </td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+
+    <!-- Tabla de Comprobantes Vencidos -->
+    <h3 class="text-lg font-semibold mb-4 text-red-600">Vencidos</h3>
+    <table class="table-auto w-full border-collapse border border-gray-300">
+      <thead>
+        <tr class="bg-gray-100">
+          <th class="border border-gray-300 px-4 py-2">Alumno</th>
+          <th class="border border-gray-300 px-4 py-2">Correo</th>
+          <th class="border border-gray-300 px-4 py-2">Estado</th>
+          <th class="border border-gray-300 px-4 py-2">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% vencidos.forEach((comprobante) => { %>
+          <tr>
+            <td class="border border-gray-300 px-4 py-2"><%= comprobante.nombre_nino %></td>
+            <td class="border border-gray-300 px-4 py-2"><%= comprobante.correo_electronico %></td>
+            <td class="border border-gray-300 px-4 py-2 status-rejected">Vencido</td>
+            <td class="border border-gray-300 px-4 py-2 flex gap-2">
+              <!-- Se usa la ruta controlada para descargar -->
+              <a href="/admin/comprobantes/<%= comprobante.id %>/descargar" class="custom-button py-2 px-4 rounded-md">Descargar</a>
+              <form action="/admin/comprobantes/<%= comprobante.id %>/eliminar" method="POST">
+                <button type="submit" class="logout-button py-2 px-4 rounded-md">Eliminar</button>
+              </form>
+            </td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </main>
+
+  <footer class="custom-bg text-white py-6 mt-auto">
+    <div class="container mx-auto text-center">
+      <p>&copy; 2024 Academia Halcones UV. Todos los derechos reservados.</p>
+    </div>
+  </footer>
+</body>
+</html>

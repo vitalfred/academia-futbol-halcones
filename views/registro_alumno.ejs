@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Academia Halcones UV - Registro de Alumno</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css">
+  <link rel="stylesheet" href="/assets/css/registro_alumno.css">
+</head>
+<body class="bg-gray-50 font-sans">
+  <header class="custom-bg text-white py-4 shadow-md">
+    <div class="container mx-auto px-4 flex justify-between items-center">
+      <img src="/assets/img/logo.png" alt="Logo Academia Halcones UV" class="h-16 w-auto mr-4">
+      <button onclick="confirmarCancelarRegistro()" class="logout-button text-white py-2 px-4 rounded-md font-semibold">Cancelar Registro</button>
+    </div>
+  </header>
+
+  <main class="container mx-auto px-4 py-12">
+    <!-- Formulario de Registro de Alumno -->
+    <section class="bg-white p-8 rounded-lg shadow-lg w-full max-w-2xl mx-auto">
+      <h2 class="text-2xl font-bold mb-6 text-center text-gray-700">Registro de Alumno</h2>
+      <form id="registro-alumno-form" action="/registro-alumno" method="POST" enctype="multipart/form-data" class="space-y-6">
+
+        <div>
+          <label for="curso-interes" class="block text-sm font-medium text-gray-700">Elige el curso de interés:</label>
+          <select id="curso-interes" name="curso-interes" class="mt-1 block w-full p-3 border border-gray-300 rounded-md">
+            <option value="" disabled selected>Selecciona un curso</option>
+            <option value="curso1">Curso 1 - Martes y Jueves</option>
+            <option value="curso2">Curso 2 - Lunes, Miércoles y Viernes</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="categoria-horario" class="block text-sm font-medium text-gray-700">Selecciona la categoría y horario:</label>
+          <select id="categoria-horario" name="categoria-horario" class="mt-1 block w-full p-3 border border-gray-300 rounded-md">
+            <option value="" disabled selected>Selecciona una categoría</option>
+            <option value="4-5">4-5 años: 16:00 a 17:30h</option>
+            <option value="6-7">6-7 años: 16:00 a 17:30h</option>
+            <option value="8-9">8-9 años: 16:00 a 18:00h</option>
+            <option value="10-11">10-11 años: 16:00 a 18:00h</option>
+            <option value="12-13">12-13 años: 16:00 a 18:00h</option>
+            <option value="14-15">14-15 años: 16:00 a 18:00h</option>
+            <option value="16-17">16-17 años: 16:00 a 18:00h</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="nombre-nino" class="block text-sm font-medium text-gray-700">Nombre completo del niño/a:</label>
+          <input type="text" id="nombre-nino" name="nombre-nino" class="mt-1 block w-full p-3 border border-gray-300 rounded-md" required oninput="capitalizeWords(this)">
+        </div>
+
+        <div>
+          <label for="edad" class="block text-sm font-medium text-gray-700">Edad:</label>
+          <input type="number" id="edad" name="edad" class="mt-1 block w-full p-3 border border-gray-300 rounded-md" required>
+        </div>
+
+        <div>
+          <label for="fecha-nacimiento" class="block text-sm font-medium text-gray-700">Fecha de nacimiento:</label>
+          <input type="date" id="fecha-nacimiento" name="fecha-nacimiento" class="mt-1 block w-full p-3 border border-gray-300 rounded-md" required>
+        </div>
+
+        <div>
+          <label for="sexo" class="block text-sm font-medium text-gray-700">Sexo:</label>
+          <select id="sexo" name="sexo" class="mt-1 block w-full p-3 border border-gray-300 rounded-md" required>
+            <option value="" disabled selected>Selecciona el sexo</option>
+            <option value="Masculino">Masculino</option>
+            <option value="Femenino">Femenino</option>
+          </select>
+        </div>
+        
+        <div>
+          <label for="talla-camiseta" class="block text-sm font-medium text-gray-700">Talla de camiseta:</label>
+          <select id="talla-camiseta" name="talla-camiseta" class="mt-1 block w-full p-3 border border-gray-300 rounded-md" required>
+            <option value="" disabled selected>Selecciona una talla</option>
+            <option value="4">4</option>
+            <option value="6">6</option>
+            <option value="8">8</option>
+            <option value="10">10</option>
+            <option value="12">12</option>
+            <option value="14">14</option>
+            <option value="16">16</option>
+            <option value="XCH">XCH</option>
+            <option value="CH">CH</option>
+            <option value="M">M</option>
+            <option value="G">G</option>
+            <option value="XG">XG</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="estatura" class="block text-sm font-medium text-gray-700">Estatura (cm):</label>
+          <input type="number" step="0.01" id="estatura" name="estatura" class="mt-1 block w-full p-3 border border-gray-300 rounded-md" required>
+        </div>
+
+        <div>
+          <label for="peso" class="block text-sm font-medium text-gray-700">Peso (kg):</label>
+          <input type="number" step="0.01" id="peso" name="peso" class="mt-1 block w-full p-3 border border-gray-300 rounded-md" required>
+        </div>
+
+        <div>
+          <label for="centro-educativo" class="block text-sm font-medium text-gray-700">Nombre del centro educativo al que asiste:</label>
+          <input type="text" id="centro-educativo" name="centro-educativo" class="mt-1 block w-full p-3 border border-gray-300 rounded-md" required oninput="capitalizeWords(this)">
+        </div>
+
+        <div>
+            <label for="seguro-medico" class="block text-sm font-medium text-gray-700">¿Cuenta con algún seguro médico público o particular?</label>
+            <select id="seguro-medico" name="seguro-medico" class="mt-1 block w-full p-3 border border-gray-300 rounded-md" onchange="toggleSeguroContainer()">
+              <option value="" disabled selected>Selecciona una opción</option>
+              <option value="si">Sí</option>
+              <option value="no">No</option>
+            </select>
+          </div>
+  
+          <div id="nombre-seguro-container" style="display: none;">
+            <label for="nombre-seguro" class="block text-sm font-medium text-gray-700">Nombre de la institución que brinda el seguro:</label>
+            <input type="text" id="nombre-seguro" name="nombre-seguro" class="mt-1 block w-full p-3 border border-gray-300 rounded-md" oninput="capitalizeWords(this)">
+          </div>
+  
+          <div>
+            <label for="acta-nacimiento" class="block text-sm font-medium text-gray-700">Subir Acta de Nacimiento (PDF):</label>
+            <input type="file" id="acta-nacimiento" name="acta-nacimiento" accept="application/pdf" class="border border-gray-300 p-2 w-full rounded-md" required>
+          </div>
+    
+  
+          <div>
+            <label for="certificado-medico" class="block text-sm font-medium text-gray-700">Subir Certificado Médico (PDF):</label>
+            <input type="file" id="certificado-medico" name="certificado-medico" accept="application/pdf" class="border border-gray-300 p-2 w-full rounded-md" required>
+          </div>
+  
+          <div>
+            <label for="nombre-tutor" class="block text-sm font-medium text-gray-700">Nombre del padre o tutor:</label>
+            <input type="text" id="nombre-tutor" name="nombre-tutor" class="mt-1 block w-full p-3 border border-gray-300 rounded-md" required oninput="capitalizeWords(this)">
+          </div>
+  
+          <div>
+            <label for="telefono-contacto" class="block text-sm font-medium text-gray-700">Número de teléfono de contacto:</label>
+            <input type="tel" id="telefono-contacto" name="telefono-contacto" class="mt-1 block w-full p-3 border border-gray-300 rounded-md" required>
+          </div>
+  
+          <div>
+            <label for="correo-electronico" class="block text-sm font-medium text-gray-700">Correo electrónico:</label>
+            <input type="email" id="correo-electronico" name="correo-electronico" class="mt-1 block w-full p-3 border border-gray-300 rounded-md" required>
+          </div>
+  
+          <div>
+            <label for="direccion" class="block text-sm font-medium text-gray-700">Dirección completa (calle, número exterior e interior, colonia):</label>
+            <input type="text" id="direccion" name="direccion" class="mt-1 block w-full p-3 border border-gray-300 rounded-md" required>
+          </div>
+  
+          <div>
+            <label for="alergias" class="block text-sm font-medium text-gray-700">¿Padece alguna alergia, enfermedad crónica o condición médica?</label>
+            <select id="alergias" name="alergias" class="mt-1 block w-full p-3 border border-gray-300 rounded-md" onchange="toggleAlergiasContainer()">
+              <option value="" disabled selected>Selecciona una opción</option>
+              <option value="si">Sí</option>
+              <option value="no">No</option>
+            </select>
+            <div id="detalle-alergias-container" style="display: none;">
+              <label for="detalle-alergias" class="block text-sm font-medium text-gray-700">Especifica la alergia o condición:</label>
+              <textarea id="detalle-alergias" name="detalle-alergias" class="mt-1 block w-full p-3 border border-gray-300 rounded-md" rows="3" oninput="capitalizeFirstLetter(this)"></textarea>
+            </div>
+          </div>
+  
+          <div>
+            <label for="alergico-medicamento" class="block text-sm font-medium text-gray-700">¿Es alérgico(a) a algún medicamento?</label>
+            <select id="alergico-medicamento" name="alergico-medicamento" class="mt-1 block w-full p-3 border border-gray-300 rounded-md" onchange="toggleMedicamentoContainer()">
+              <option value="" disabled selected>Selecciona una opción</option>
+              <option value="si">Sí</option>
+              <option value="no">No</option>
+            </select>
+            <div id="detalle-medicamento-container" style="display: none;">
+              <label for="detalle-medicamento" class="block text-sm font-medium text-gray-700">Especifica el medicamento:</label>
+              <textarea id="detalle-medicamento" name="detalle-medicamento" class="mt-1 block w-full p-3 border border-gray-300 rounded-md" rows="3" oninput="capitalizeFirstLetter(this)"></textarea>
+            </div>
+          </div>
+  
+          <div>
+            <label for="actividad-fisica" class="block text-sm font-medium text-gray-700">¿En el último año ha realizado actividad física o deporte?</label>
+            <select id="actividad-fisica" name="actividad-fisica" class="mt-1 block w-full p-3 border border-gray-300 rounded-md" onchange="toggleDeporteContainer()">
+              <option value="" disabled selected>Selecciona una opción</option>
+              <option value="si">Sí</option>
+              <option value="no">No</option>
+            </select>
+          </div>
+          
+          <div id="detalle-deporte-container" style="display: none;">
+            <label for="detalle-deporte" class="block text-sm font-medium text-gray-700">¿Qué deporte(s) practicaba?</label>
+            <textarea id="detalle-deporte" name="detalle-deporte" class="mt-1 block w-full p-3 border border-gray-300 rounded-md" rows="3" oninput="capitalizeFirstLetter(this)"></textarea>
+          </div>
+          
+          <div>
+            <label for="practico-futbol" class="block text-sm font-medium text-gray-700">¿Ha practicado fútbol anteriormente?</label>
+            <select id="practico-futbol" name="practico-futbol" class="mt-1 block w-full p-3 border border-gray-300 rounded-md">
+              <option value="" disabled selected>Selecciona una opción</option>
+              <option value="si">Sí</option>
+              <option value="no">No</option>
+            </select>
+          </div>
+  
+          <div id="equipos-participados-container" style="display: none;">
+            <label for="equipos-participados" class="block text-sm font-medium text-gray-700">¿Con qué otro(s) equipo(s) ha participado?</label>
+            <textarea id="equipos-participados" name="equipos-participados" class="mt-1 block w-full p-3 border border-gray-300 rounded-md" rows="3" oninput="capitalizeFirstLetter(this)"></textarea>
+          </div>
+  
+          <div id="posicion-campo-container" style="display: none;">
+            <label for="posicion-campo" class="block text-sm font-medium text-gray-700">¿Qué posición en el campo ha jugado anteriormente?</label>
+            <input type="text" id="posicion-campo" name="posicion-campo" class="mt-1 block w-full p-3 border border-gray-300 rounded-md" oninput="capitalizeWords(this)">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Elige las 3 habilidades que te caracterizan:</label>
+            <div class="mt-2 grid grid-cols-3 gap-4" id="habilidades-container">
+              <p class="col-span-3 text-sm text-gray-600">Selecciona exactamente 3 habilidades:</p>
+              <label class="inline-flex items-center">
+                <input type="checkbox" name="habilidades" value="fuerza" class="form-checkbox h-5 w-5 text-blue-600" onclick="checkHabilidades()">
+                <span class="ml-2">Fuerza</span>
+              </label>
+              <label class="inline-flex items-center">
+                <input type="checkbox" name="habilidades" value="remate" class="form-checkbox h-5 w-5 text-blue-600" onclick="checkHabilidades()">
+                <span class="ml-2">Remate</span>
+              </label>
+              <label class="inline-flex items-center">
+                <input type="checkbox" name="habilidades" value="velocidad" class="form-checkbox h-5 w-5 text-blue-600" onclick="checkHabilidades()">
+                <span class="ml-2">Velocidad</span>
+              </label>
+              <label class="inline-flex items-center">
+                <input type="checkbox" name="habilidades" value="conduccion-balon" class="form-checkbox h-5 w-5 text-blue-600" onclick="checkHabilidades()">
+                <span class="ml-2">Conducción de balón</span>
+              </label>
+              <label class="inline-flex items-center">
+                <input type="checkbox" name="habilidades" value="agilidad" class="form-checkbox h-5 w-5 text-blue-600" onclick="checkHabilidades()">
+                <span class="ml-2">Agilidad</span>
+              </label>
+              <label class="inline-flex items-center">
+                <input type="checkbox" name="habilidades" value="control-balon" class="form-checkbox h-5 w-5 text-blue-600" onclick="checkHabilidades()">
+                <span class="ml-2">Control de balón</span>
+              </label>
+              <label class="inline-flex items-center">
+                <input type="checkbox" name="habilidades" value="coordinacion" class="form-checkbox h-5 w-5 text-blue-600" onclick="checkHabilidades()">
+                <span class="ml-2">Coordinación</span>
+              </label>
+              <label class="inline-flex items-center">
+                <input type="checkbox" name="habilidades" value="precision" class="form-checkbox h-5 w-5 text-blue-600" onclick="checkHabilidades()">
+                <span class="ml-2">Precisión</span>
+              </label>
+              <label class="inline-flex items-center">
+                <input type="checkbox" name="habilidades" value="porterear" class="form-checkbox h-5 w-5 text-blue-600" onclick="checkHabilidades()">
+                <span class="ml-2">Porterear</span>
+              </label>
+              <label class="inline-flex items-center">
+                <input type="checkbox" name="habilidades" value="constancia" class="form-checkbox h-5 w-5 text-blue-600" onclick="checkHabilidades()">
+                <span class="ml-2">Constancia</span>
+              </label>
+              <label class="inline-flex items-center">
+                <input type="checkbox" name="habilidades" value="tolerancia" class="form-checkbox h-5 w-5 text-blue-600" onclick="checkHabilidades()">
+                <span class="ml-2">Tolerancia</span>
+              </label>
+              <label class="inline-flex items-center">
+                <input type="checkbox" name="habilidades" value="trabajo-equipo" class="form-checkbox h-5 w-5 text-blue-600" onclick="checkHabilidades()">
+                <span class="ml-2">Trabajo en equipo</span>
+              </label>
+              <label class="inline-flex items-center">
+                <input type="checkbox" name="habilidades" value="defensiva" class="form-checkbox h-5 w-5 text-blue-600" onclick="checkHabilidades()">
+                <span class="ml-2">Defensiva</span>
+              </label>
+              <label class="inline-flex items-center">
+                <input type="checkbox" name="habilidades" value="pases" class="form-checkbox h-5 w-5 text-blue-600" onclick="checkHabilidades()">
+                <span class="ml-2">Pases</span>
+              </label>
+            </div>
+          </div>
+          <div>
+            <label for="enterado" class="block text-sm font-medium text-gray-700">¿Cómo se enteró de nuestra academia de fútbol?</label>
+            <select id="enterado" name="enterado" class="mt-1 block w-full p-3 border border-gray-300 rounded-md" onchange="toggleOtraFuenteContainer()">
+              <option value="" disabled selected>Selecciona una opción</option>
+              <option value="redes-sociales">Redes sociales</option>
+              <option value="recomendacion">Recomendación</option>
+              <option value="anuncios">Anuncios</option>
+              <option value="otra">Otra</option>
+            </select>
+          </div>
+  
+          <div id="otra-fuente-container" style="display: none;">
+            <label for="otra-fuente" class="block text-sm font-medium text-gray-700">Especifica cómo se enteró:</label>
+            <input type="text" id="otra-fuente" name="otra-fuente" class="mt-1 block w-full p-3 border border-gray-300 rounded-md">
+          </div>
+  
+          <div>
+            <label for="hermano-inscrito" class="block text-sm font-medium text-gray-700">¿Tiene algún hermano(a) inscrito en la academia?</label>
+            <select id="hermano-inscrito" name="hermano-inscrito" class="mt-1 block w-full p-3 border border-gray-300 rounded-md" onchange="toggleHermanoContainer()">
+              <option value="" disabled selected>Selecciona una opción</option>
+              <option value="si">Sí</option>
+              <option value="no">No</option>
+            </select>
+          </div>
+  
+          <div id="nombre-hermano-container" style="display: none;">
+            <label for="nombre-hermano" class="block text-sm font-medium text-gray-700">Nombre del hermano(a) inscrito:</label>
+            <input type="text" id="nombre-hermano" name="nombre-hermano" class="mt-1 block w-full p-3 border border-gray-300 rounded-md" oninput="capitalizeWords(this)">
+          </div>
+          
+          <div>
+            <label for="expectativas" class="block text-sm font-medium text-gray-700">¿Qué expectativas tiene de la Academia Halcones UV para su hijo o hija?</label>
+            <textarea id="expectativas" name="expectativas" class="mt-1 block w-full p-3 border border-gray-300 rounded-md" rows="4"></textarea>
+          </div>
+  
+          <section class="bg-white p-8 rounded-lg shadow-lg w-full max-w-2xl mx-auto">
+            <h2 class="text-2xl font-bold mb-6 text-center text-gray-700"></h2>
+            <!-- Campo oculto para almacenar el userId -->
+            <input type="hidden" id="userId" value="<%= userId %>">
+            
+            <form id="registro-alumno-form" action="/registro-alumno" method="POST" enctype="multipart/form-data" class="space-y-6">
+              <button type="submit" onclick="confirmarRegistro()" class="w-full custom-button text-white py-3 rounded-md font-semibold hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                Registrar Alumno
+              </button>
+              <button type="button" onclick="confirmarCancelarRegistro()" class="w-full logout-button text-white py-3 rounded-md font-semibold hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 mt-6">
+                Cancelar Registro
+              </button>
+            </form>
+          </section>
+        </main>
+      
+        <footer class="custom-bg text-white py-6 mt-auto w-full">
+          <div class="container mx-auto px-4 text-center">
+            <p>Academia Halcones UV - Todos los derechos reservados 2024</p>
+          </div>
+        </footer>
+        <script src="/assets/js/registro_alumno.js"></script>
+        <script>
+          
+          // Confirmación antes de registrar un alumno
+          function confirmarRegistro() {
+            const confirmar = confirm("¿Estás seguro de que deseas registrar este alumno?");
+            if (!confirmar) {
+              event.preventDefault(); // Prevenir el envío del formulario si el usuario cancela
+            }
+          }
+      
+          // Confirmación antes de cancelar el registro
+          function confirmarCancelarRegistro() {
+            const confirmar = confirm("¿Estás seguro de que deseas cancelar el registro? Se perderán todos los datos ingresados.");
+            if (confirmar) {
+              const userId = getUserId();
+              if (userId) {
+                window.location.href = `/panel-principal/${userId}`;
+              } else {
+                alert("Error: No se pudo obtener el ID del usuario.");
+              }
+            }
+          }
+      
+          // Función para obtener el userId del campo oculto
+          function getUserId() {
+            return document.getElementById('userId').value;
+          }
+          // Capitalizar la primera letra de cada palabra
+          function capitalizeWords(inputElement) {
+          const value = inputElement.value;
+          inputElement.value = value
+            .toLowerCase()
+            .split(' ')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(' ');
+            }
+          // Capitalizar solo la primera letra
+          function capitalizeFirstLetter(inputElement) {
+           const value = inputElement.value;
+          inputElement.value = value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
+          }
+          function validarArchivos() {
+      const actaNacimiento = document.getElementById('acta-nacimiento').files[0];
+      const certificadoMedico = document.getElementById('certificado-medico').files[0];
+
+      if (!actaNacimiento || actaNacimiento.type !== 'application/pdf') {
+        alert('El Acta de Nacimiento debe ser un archivo PDF.');
+        return false;
+      }
+
+      if (!certificadoMedico || certificadoMedico.type !== 'application/pdf') {
+        alert('El Certificado Médico debe ser un archivo PDF.');
+        return false;
+      }
+
+      return true;
+    }
+
+        </script>
+      </body>
+      </html>
