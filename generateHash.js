@@ -1,4 +1,4 @@
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 
 (async () => {
   const password = 'admin123'; // Cambia por la contraseña deseada
