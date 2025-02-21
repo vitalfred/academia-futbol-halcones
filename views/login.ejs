@@ -19,6 +19,10 @@
     <!-- Sección de Inicio de Sesión -->
     <section id="login" class="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
       <h2 class="text-2xl font-bold mb-6 text-center text-gray-700">Iniciar Sesión</h2>
+
+      <!-- Mensaje de error dinámico -->
+      <p id="error-message" class="hidden text-red-600 text-sm font-semibold mb-4 text-center"></p>
+
       <form id="login-form" class="space-y-6">
         <div>
           <label for="login-email" class="block text-sm font-medium text-gray-700">Correo Electrónico:</label>
@@ -30,7 +34,9 @@
           <input type="password" id="login-password" name="password" class="mt-1 block w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" required>
         </div>
 
-        <button type="submit" class="w-full custom-button text-white py-3 rounded-md font-semibold hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">Iniciar Sesión</button>
+        <button type="submit" class="w-full custom-button text-white py-3 rounded-md font-semibold hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+          Iniciar Sesión
+        </button>
 
         <div class="flex justify-between mt-6 text-sm">
           <a href="/users/cambio-contrasena" class="text-blue-600 hover:underline">Olvidé mi contraseña</a>
@@ -46,36 +52,37 @@
     </div>
   </footer>
 
-  <!-- JavaScript para manejar redirección -->
+  <!-- JavaScript para manejar autenticación -->
   <script>
-    document.getElementById('login-form').addEventListener('submit', function(event) {
-      event.preventDefault(); // Prevenir el comportamiento por defecto del formulario
+    document.getElementById('login-form').addEventListener('submit', async function(event) {
+      event.preventDefault(); // Evita la recarga de la página
 
       const email = document.getElementById('login-email').value;
       const password = document.getElementById('login-password').value;
+      const errorMessage = document.getElementById('error-message');
 
-      fetch('/users/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      })
-        .then((response) => {
-          if (response.ok) {
-            return response.json();
-          } else {
-            throw new Error('Error al iniciar sesión. Verifica tus credenciales.');
-          }
-        })
-        .then((data) => {
-          console.log('Inicio de sesión exitoso:', data); // Log para depuración
-          window.location.href = data.redirectUrl; // Redirigir al panel principal dinámico
-        })
-        .catch((error) => {
-          console.error(error.message);
-          alert(error.message);
+      errorMessage.classList.add('hidden'); // Oculta errores previos
+
+      try {
+        const response = await fetch('/users/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
         });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          console.log(' Inicio de sesión exitoso:', data);
+          window.location.href = data.redirectUrl; // Redirigir según el usuario
+        } else {
+          throw new Error(data.message || 'Error al iniciar sesión.');
+        }
+      } catch (error) {
+        console.error('❌ Error en el login:', error);
+        errorMessage.textContent = error.message;
+        errorMessage.classList.remove('hidden'); // Muestra el mensaje de error
+      }
     });
   </script>
 </body>
