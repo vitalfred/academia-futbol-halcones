@@ -17,6 +17,16 @@ const reportesRoutes = require('./routes/reportes_routes');
 const app = express();
 const PORT = process.env.PORT || 3000; // Usar el puerto de Railway
 
+const pool = require('./db');
+
+pool.query('SELECT NOW()', (err, res) => {
+    if (err) {
+        console.error('❌ Error de conexión a PostgreSQL:', err);
+    } else {
+        console.log('✅ Conexión exitosa a PostgreSQL:', res.rows[0]);
+    }
+});
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
