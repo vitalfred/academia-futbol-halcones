@@ -1,5 +1,6 @@
 const express = require('express');
 const session = require('express-session');
+const pgSession = require('connect-pg-simple')(session);
 const path = require('path');
 const cron = require('node-cron');
 const pool = require('./db');
@@ -19,24 +20,36 @@ const PORT = process.env.PORT || 3000; // Usar el puerto de Railway
 
 console.log("🔍 DATABASE_URL:", process.env.DATABASE_URL);
 
-pool.query('SELECT NOW()', (err, res) => {
-    if (err) {
-        console.error('❌ Error de conexión a PostgreSQL:', err);
-    } else {
-        console.log('✅ Conexión exitosa a PostgreSQL:', res.rows[0]);
-    }
-});
+// Intentar conexión a PostgreSQL antes de iniciar el servidor
+(async () => {
+  try {
+    const res = await pool.query('SELECT NOW()');
+    console.log('✅ Conexión exitosa a PostgreSQL:', res.rows[0]);
+  } catch (err) {
+    console.error('❌ Error de conexión a PostgreSQL:', err);
+    process.exit(1); // Salir si la base de datos no está disponible
+  }
+})();
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Configuración de sesiones
+// Configuración de sesiones con PostgreSQL
 app.use(
   session({
+    store: new pgSession({
+      pool: pool, // Usar PostgreSQL para almacenar sesiones
+      tableName: 'session', // Nombre de la tabla en la BD
+      createTableIfMissing: true // Creará la tabla si no existe
+    }),
     secret: process.env.SESSION_SECRET || 'mi_secreto_academia',
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: process.env.NODE_ENV === 'production' }, // Secure solo en producción
+    cookie: {
+      secure: process.env.NODE_ENV === 'production', // Solo en producción
+      httpOnly: true,
+      maxAge: 1000 * 60 * 60 * 24 // 1 día de duración
+    }
   })
 );
 
@@ -102,9 +115,9 @@ app.get('/admin-panel/:adminId', verificarAdmin, async (req, res) => {
   }
 });
 
-// Iniciar el servidor
+// Iniciar el servidor solo si la conexión a la BD es exitosa
 app.listen(PORT, () => {
-  console.log(`Servidor corriendo en http://localhost:${PORT}`);
+  console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
 });
 
 // ─────────────────────────────────────────────────────────
@@ -112,7 +125,7 @@ app.listen(PORT, () => {
 // ─────────────────────────────────────────────────────────
 cron.schedule('1 0 * * *', async () => {
   try {
-    console.log('Revisando comprobantes vencidos...');
+    console.log('🔄 Revisando comprobantes vencidos...');
     const result = await pool.query(`
       UPDATE comprobantes_pago
       SET estado = 'vencido'
@@ -121,11 +134,11 @@ cron.schedule('1 0 * * *', async () => {
     `);
 
     if (result.rowCount > 0) {
-      console.log(`Se actualizaron ${result.rowCount} comprobantes a vencido.`);
+      console.log(`✅ Se actualizaron ${result.rowCount} comprobantes a vencido.`);
     } else {
-      console.log('No hay comprobantes para actualizar a vencido.');
+      console.log('🔹 No hay comprobantes para actualizar a vencido.');
     }
   } catch (error) {
-    console.error('Error al actualizar comprobantes vencidos:', error);
+    console.error('❌ Error al actualizar comprobantes vencidos:', error);
   }
 });
