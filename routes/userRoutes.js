@@ -1,14 +1,18 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../db'); // Importar la conexión a la base de datos desde db.js
-const bcrypt = require('bcrypt'); // Importamos bcrypt para encriptar contraseñas
+const bcrypt = require('bcrypt');
+
 // Ruta para renderizar el formulario de inicio de sesión
 router.get('/login', (req, res) => {
   res.render('login'); // Renderiza el archivo views/login.ejs
 });
+
+// Ruta para cambiar contraseña
 router.get('/cambio-contrasena', (req, res) => {
   res.render('cambio_contraseña'); // Renderiza la nueva vista
 });
+
 // Ruta de inicio de sesión (método POST)
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
@@ -31,25 +35,21 @@ router.post('/login', async (req, res) => {
     }
 
     // Almacenar el ID del usuario y rol en la sesión
-    req.session.userId = user.user_id;
+    req.session.userId = user.id;
     req.session.isAdmin = user.is_admin;
 
-    // Redirigir según el rol del usuario
-    
-    if (user.is_admin) {
+    console.log("🛠️ Sesión almacenada:", req.session);
+
+    // Guardar la sesión antes de redirigir
+    req.session.save(() => {
       res.status(200).json({
         message: 'Inicio de sesión correcto',
-        redirectUrl: `/admin-panel/${user.user_id}` // Cambia a la ruta del admin_panel
+        redirectUrl: user.is_admin ? `/admin-panel/${user.id}` : `/panel-principal/${user.id}`
       });
-    
-} else {
-  res.status(200).json({
-    message: 'Inicio de sesión correcto',
-    redirectUrl: `/panel-principal/${user.user_id}`
-  });
-}
+    });
+
   } catch (error) {
-    console.error('Error al iniciar sesión:', error);
+    console.error('❌ Error al iniciar sesión:', error);
     res.status(500).json({ message: 'Error al iniciar sesión. Inténtelo de nuevo más tarde.' });
   }
 });
@@ -84,14 +84,17 @@ router.post('/register', async (req, res) => {
 
     // Insertar un nuevo usuario en la base de datos
     const newUser = await pool.query(
-      'INSERT INTO users (email, password, role) VALUES ($1, $2, $3) RETURNING *',
-      [email, hashedPassword, 'parent/tutor']
+      'INSERT INTO users (email, password, is_admin) VALUES ($1, $2, $3) RETURNING *',
+      [email, hashedPassword, false]
     );
+
+    console.log("✅ Usuario registrado correctamente:", newUser.rows[0]);
 
     // Enviar respuesta con mensaje de éxito
     res.status(201).json({ message: 'Usuario registrado exitosamente', redirectUrl: '/users/login' });
+
   } catch (error) {
-    console.error('Error al registrar el usuario:', error);
+    console.error('❌ Error al registrar el usuario:', error);
     res.status(500).json({ message: `Error al registrar el usuario. Detalles: ${error.message}` });
   }
 });
@@ -102,7 +105,7 @@ router.get('/test-db', async (req, res) => {
     const result = await pool.query('SELECT NOW()');
     res.status(200).json({ message: 'Conexión exitosa a la base de datos', time: result.rows[0].now });
   } catch (error) {
-    console.error('Error al conectar con la base de datos:', error);
+    console.error('❌ Error al conectar con la base de datos:', error);
     res.status(500).send('Error al conectar con la base de datos');
   }
 });
@@ -113,6 +116,7 @@ router.get('/logout', (req, res) => {
     if (err) {
       return res.status(500).json({ message: 'Error al cerrar sesión. Inténtelo de nuevo más tarde.' });
     }
+    res.clearCookie('connect.sid'); // Eliminar cookie de sesión en el navegador
     res.redirect('/users/login');
   });
 });
