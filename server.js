@@ -17,7 +17,6 @@ const reportesRoutes = require('./routes/reportes_routes');
 const app = express();
 const PORT = process.env.PORT || 3000; // Usar el puerto de Railway
 
-const pool = require('./db');
 
 pool.query('SELECT NOW()', (err, res) => {
     if (err) {
