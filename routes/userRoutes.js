@@ -35,7 +35,7 @@ router.post('/login', async (req, res) => {
     }
 
     // Almacenar el ID del usuario y rol en la sesión
-    req.session.userId = user.id;
+    req.session.userId = user.user_id;
     req.session.isAdmin = user.is_admin;
 
     console.log("🛠️ Sesión almacenada:", req.session);
