@@ -31,6 +31,9 @@ console.log("🔍 DATABASE_URL:", process.env.DATABASE_URL);
   }
 })();
 
+// Agregar esta línea para que Express confíe en el proxy (necesario en producción)
+app.set('trust proxy', 1);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -115,7 +118,7 @@ app.get('/admin-panel/:adminId', verificarAdmin, async (req, res) => {
   }
 });
 
-// Iniciar el servidor solo si la conexión a la BD es exitosa
+// Iniciar el servidor
 app.listen(PORT, () => {
   console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
 });
