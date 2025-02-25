@@ -36,7 +36,7 @@ router.post('/login', async (req, res) => {
 
     // Almacenar el ID del usuario y rol en la sesión
     req.session.userId = user.user_id;
-    req.session.isAdmin = user.is_admin;
+    req.session.isAdmin = user.user.is_admin;
 
     console.log("🛠️ Sesión almacenada:", req.session);
 
@@ -44,7 +44,7 @@ router.post('/login', async (req, res) => {
     req.session.save(() => {
       res.status(200).json({
         message: 'Inicio de sesión correcto',
-        redirectUrl: user.is_admin ? `/admin-panel/${user.id}` : `/panel-principal/${user.id}`
+        redirectUrl: user.user.is_admin ? `/admin-panel/${user.user_id} ` : `/panel-principal/${user.id}`
       });
     });
 
