@@ -17,7 +17,8 @@ const reportesRoutes = require('./routes/reportes_routes');
 
 const app = express();
 const PORT = process.env.PORT || 3000; // Usar el puerto de Railway
-
+const admin_routestemp = require('./routes/admin_routestemp');
+app.use('/admin', admin_routestemp);
 console.log("🔍 DATABASE_URL:", process.env.DATABASE_URL);
 
 // Intentar conexión a PostgreSQL antes de iniciar el servidor
