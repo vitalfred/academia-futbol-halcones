@@ -80,17 +80,29 @@
       </div>
 
       <!-- Talla Camiseta -->
-      <div>
-        <label for="talla_camiseta" class="block text-sm font-medium text-gray-700">Talla de Camiseta:</label>
-        <input 
-          type="text" 
-          id="talla_camiseta" 
-          name="talla_camiseta" 
-          value="<%= alumno.talla_camiseta %>" 
-          class="border border-gray-300 p-2 w-full rounded-md"
-          pattern="^(XG|G|M|CH|XCH)$"
-          title="Debe ser una de las siguientes: XG, G, M, CH, XCH">
-      </div>
+   <!-- Talla Camiseta -->
+<div>
+  <label for="talla_camiseta" class="block text-sm font-medium text-gray-700">Talla de Camiseta:</label>
+  <select 
+    id="talla_camiseta" 
+    name="talla_camiseta" 
+    class="border border-gray-300 p-2 w-full rounded-md">
+    
+    <option value="4" <%= alumno.talla_camiseta == "4" ? "selected" : "" %>>4</option>
+    <option value="6" <%= alumno.talla_camiseta == "6" ? "selected" : "" %>>6</option>
+    <option value="8" <%= alumno.talla_camiseta == "8" ? "selected" : "" %>>8</option>
+    <option value="10" <%= alumno.talla_camiseta == "10" ? "selected" : "" %>>10</option>
+    <option value="12" <%= alumno.talla_camiseta == "12" ? "selected" : "" %>>12</option>
+    <option value="14" <%= alumno.talla_camiseta == "14" ? "selected" : "" %>>14</option>
+    <option value="16" <%= alumno.talla_camiseta == "16" ? "selected" : "" %>>16</option>
+    <option value="XCH" <%= alumno.talla_camiseta == "XCH" ? "selected" : "" %>>XCH</option>
+    <option value="CH" <%= alumno.talla_camiseta == "CH" ? "selected" : "" %>>CH</option>
+    <option value="M" <%= alumno.talla_camiseta == "M" ? "selected" : "" %>>M</option>
+    <option value="G" <%= alumno.talla_camiseta == "G" ? "selected" : "" %>>G</option>
+    <option value="XG" <%= alumno.talla_camiseta == "XG" ? "selected" : "" %>>XG</option>
+
+  </select>
+</div>
 
       <!-- Estatura y Peso -->
       <div class="grid grid-cols-2 gap-4">
