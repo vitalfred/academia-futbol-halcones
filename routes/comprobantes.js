@@ -1,61 +1,129 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const path = require('path');
 const pool = require('../db');
 
-// Configuración de multer para subir archivos
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, path.join(__dirname, '../uploads'));
-  },
-  filename: (req, file, cb) => {
-    const extension = path.extname(file.originalname);
-    cb(null, `comprobante_${req.params.id}_${Date.now()}${extension}`);
-  },
-});
+// **Límite de tamaño en bytes (2MB)**
+const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
+
+// Configuración de multer para almacenar archivos en memoria
+const storage = multer.memoryStorage();
 const upload = multer({
   storage,
+  limits: { fileSize: MAX_FILE_SIZE }, // **Límite de 2MB**
   fileFilter: (req, file, cb) => {
-    const allowedMimeTypes = ['application/pdf', 'image/jpeg', 'image/png'];
+    const allowedMimeTypes = ['image/jpeg', 'image/png'];
     if (allowedMimeTypes.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error('Solo se permiten archivos PDF, JPG o PNG.'));
+      cb(new Error('Solo se permiten imágenes en formato JPG o PNG.'));
     }
   },
 });
 
-// **Ruta para subir un comprobante**
-router.post('/:id/subir', upload.single('comprobante'), async (req, res) => {
+// **Ruta para subir un comprobante con manejo de errores sin recargar la página**
+router.post('/:id/subir', (req, res, next) => {
+  upload.single('comprobante')(req, res, (err) => {
+    if (err) {
+      let errorMessage = 'Error inesperado al subir el archivo.';
+      if (err instanceof multer.MulterError && err.code === 'LIMIT_FILE_SIZE') {
+        errorMessage = 'El archivo es demasiado grande. Límite: 2MB.';
+      } else if (err.message === 'Solo se permiten imágenes en formato JPG o PNG.') {
+        errorMessage = err.message;
+      }
+
+      return res.send(`
+        <script>
+          alert("${errorMessage}");
+          window.history.back();
+        </script>
+      `);
+    }
+    next();
+  });
+}, async (req, res) => {
   try {
     const { id } = req.params;
 
     if (!req.file) {
-      return res.status(400).send('No se subió ningún archivo.');
+      return res.send(`
+        <script>
+          alert("No se subió ningún archivo.");
+          window.history.back();
+        </script>
+      `);
     }
 
-    // Opcional: Si quieres que cuando suba un nuevo comprobante,
-    // el anterior (si estaba "aprobado") se vuelva "vencido", puedes conservar:
-    // await pool.query(
-    //   'UPDATE comprobantes_pago SET estado = $1 WHERE alumno_id = $2 AND estado = $3',
-    //   ['vencido', id, 'aprobado']
-    // );
-
-    // Insertar el nuevo comprobante con estado "pendiente"
+    // Insertar el archivo en la base de datos
     await pool.query(
-      'INSERT INTO comprobantes_pago (alumno_id, archivo, estado, fecha_subida) VALUES ($1, $2, $3, NOW())',
-      [id, req.file.filename, 'pendiente']
+      'INSERT INTO comprobantes_pago (alumno_id, nombre_archivo, archivo_data, estado, fecha_subida) VALUES ($1, $2, $3, $4, NOW())',
+      [id, req.file.originalname, req.file.buffer, 'pendiente']
     );
 
-    res.redirect(`/alumno/${id}`);
+    res.send(`
+      <script>
+        alert("Comprobante subido correctamente.");
+        window.location.href = "/alumno/${id}";
+      </script>
+    `);
   } catch (error) {
     console.error('Error al subir el comprobante:', error.message);
-    res.status(500).send('Ocurrió un error al subir el comprobante.');
+    res.send(`
+      <script>
+        alert("Ocurrió un error al subir el comprobante.");
+        window.history.back();
+      </script>
+    `);
   }
 });
 
-// **Ruta para validar/rechazar un comprobante** (solo si todavía la usas)
+
+
+// **Ruta para descargar un comprobante desde la BD**
+router.get('/:id/descargar', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query('SELECT nombre_archivo, archivo_data FROM comprobantes_pago WHERE id = $1', [id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).send('Comprobante no encontrado.');
+    }
+
+    const { nombre_archivo, archivo_data } = result.rows[0];
+
+    if (!archivo_data) {
+      return res.status(404).send('No hay datos almacenados para este comprobante.');
+    }
+
+    res.set({
+      'Content-Type': 'application/octet-stream',
+      'Content-Disposition': `attachment; filename="${nombre_archivo}"`,
+      'Content-Length': archivo_data.length
+    });
+
+    res.send(archivo_data);
+  } catch (error) {
+    console.error('Error al descargar el comprobante:', error);
+    res.status(500).send('Error al descargar el comprobante.');
+  }
+});
+
+// **Ruta para eliminar un comprobante**
+router.post('/:id/eliminar', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Eliminar el registro de la base de datos
+    await pool.query('DELETE FROM comprobantes_pago WHERE id = $1', [id]);
+
+    res.redirect('/admin/comprobantes');
+  } catch (error) {
+    console.error('Error al eliminar el comprobante:', error);
+    res.status(500).send('Error interno al eliminar comprobante.');
+  }
+});
+
+// **Ruta para validar/rechazar un comprobante**
 router.post('/comprobante/:id/validar', async (req, res) => {
   try {
     const { id } = req.params;
@@ -77,7 +145,6 @@ router.post('/comprobante/:id/validar', async (req, res) => {
     let fechaVencimiento = null;
     const ahora = new Date();
 
-    // Lógica de periodos (antigua) - Puedes reemplazar con la nueva si gustas
     if (estado === 'validado') {
       switch (periodo) {
         case 'dia':

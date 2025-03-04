@@ -41,45 +41,25 @@
     </div>
   <% } %>
 
-  <main
-    class="container mx-auto px-4 py-12 flex flex-col items-center space-y-6 flex-grow"
-  >
+  <main class="container mx-auto px-4 py-12 flex flex-col items-center space-y-6 flex-grow">
     <h1 class="text-3xl font-bold mb-8 text-gray-700">Generar Reportes</h1>
 
-    <div
-      id="mensaje"
-      class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative w-full max-w-2xl"
-    >
+    <div id="mensaje" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative w-full max-w-2xl">
       <span id="mensaje-texto"></span>
     </div>
 
-    <section
-      id="generar-reportes"
-      class="bg-white p-8 rounded-lg shadow-lg w-full max-w-2xl"
-    >
-      <form
-        id="generar-reportes-form"
-        action="/admin/reportes/generar"
-        method="POST"
-      >
+    <section id="generar-reportes" class="bg-white p-8 rounded-lg shadow-lg w-full max-w-2xl">
+      <form id="generar-reportes-form" action="/admin/reportes/generar" method="POST">
         <div>
-          <label
-            for="tipo-reporte"
-            class="block text-sm font-medium text-gray-700"
-          >
+          <label for="tipo-reporte" class="block text-sm font-medium text-gray-700">
             Seleccione el tipo de reporte a generar:
           </label>
-          <select
-            id="tipo-reporte"
-            name="tipo_reporte"
-            class="mt-1 block w-full p-3 border border-gray-300 rounded-md"
-            required
-          >
+          <select id="tipo-reporte" name="tipo_reporte" class="mt-1 block w-full p-3 border border-gray-300 rounded-md" required>
             <option value="" disabled selected>Selecciona un tipo de reporte</option>
             <option value="general-alumnos">Reporte General de Alumnos</option>
             <option value="comprobantes-validados">Reporte de Comprobantes Validados</option>
             <option value="hermanos-inscritos">Alumnos con Hermanos Inscritos</option>
-            <option value="alergias">Alumnos con Alergias alergia, enfermedad crónica o condición médica</option>
+            <option value="alergias">Alumnos con Alergias, enfermedad crónica o condición médica</option>
             <option value="alergico-medicamentos">Alumnos Alérgicos a Medicamentos</option>
             <option value="enterado-academia">¿Cómo se enteraron de la academia?</option>
             <option value="usuarios-vencidos">Usuarios Vencidos</option>
@@ -90,43 +70,22 @@
 
         <div id="fechas-boton-seccion" class="mt-4">
           <div>
-            <label
-              for="fecha-inicio"
-              class="block text-sm font-medium text-gray-700"
-            >
+            <label for="fecha-inicio" class="block text-sm font-medium text-gray-700">
               Fecha de Inicio:
             </label>
-            <input
-              type="date"
-              id="fecha-inicio"
-              name="fecha_inicio"
-              class="mt-1 block w-full p-3 border border-gray-300 rounded-md"
-              required
-            />
+            <input type="date" id="fecha-inicio" name="fecha_inicio" class="mt-1 block w-full p-3 border border-gray-300 rounded-md" />
           </div>
           <div class="mt-4">
-            <label
-              for="fecha-fin"
-              class="block text-sm font-medium text-gray-700"
-            >
+            <label for="fecha-fin" class="block text-sm font-medium text-gray-700">
               Fecha de Fin:
             </label>
-            <input
-              type="date"
-              id="fecha-fin"
-              name="fecha_fin"
-              class="mt-1 block w-full p-3 border border-gray-300 rounded-md"
-              required
-              max="<%= new Date().toISOString().split('T')[0] %>"
-            />
+            <input type="date" id="fecha-fin" name="fecha_fin" class="mt-1 block w-full p-3 border border-gray-300 rounded-md"
+              max="<%= new Date().toISOString().split('T')[0] %>" />
           </div>
         </div>
 
-        <button
-          type="submit"
-          id="generar-reporte-boton"
-          class="custom-button text-white py-3 px-6 rounded-md font-semibold w-full hover:bg-blue-700 mt-4"
-        >
+        <button type="submit" id="generar-reporte-boton"
+          class="custom-button text-white py-3 px-6 rounded-md font-semibold w-full hover:bg-blue-700 mt-4">
           Generar Reporte
         </button>
       </form>
@@ -144,7 +103,7 @@
     const fechasBotonSeccion = document.getElementById('fechas-boton-seccion');
     const mensaje = document.getElementById('mensaje');
     const mensajeTexto = document.getElementById('mensaje-texto');
-
+  
     const mostrarMensaje = (texto) => {
       mensajeTexto.textContent = texto;
       mensaje.classList.remove('hidden');
@@ -152,14 +111,22 @@
         mensaje.classList.add('hidden');
       }, 5000);
     };
-
+  
     tipoReporteSelect.addEventListener('change', () => {
-      if (tipoReporteSelect.value === 'comprobantes-validados') {
-        // fechasBotonSeccion.classList.add('hidden');
+      if (
+      tipoReporteSelect.value === 'comprobantes-validados' || 
+      tipoReporteSelect.value === 'general-alumnos' || 
+      tipoReporteSelect.value === 'hermanos-inscritos' || 
+      tipoReporteSelect.value === 'alergias' || 
+      tipoReporteSelect.value === 'alergico-medicamentos' || 
+      tipoReporteSelect.value === 'enterado-academia' // Ahora también para los dos nuevos reportes
+    ) {
+        fechasBotonSeccion.style.display = 'none'; // Ocultar fechas en estos dos reportes
       } else {
-        fechasBotonSeccion.classList.remove('hidden');
+        fechasBotonSeccion.style.display = 'block'; // Mostrar fechas en los demás reportes
       }
     });
   </script>
+  
 </body>
 </html>

@@ -24,8 +24,10 @@ router.get('/', (req, res) => {
  *   - Matrícula
  *   - Nombre
  *   - Fecha de Validación
- *   - Imagen (si existe y es de un formato soportado)
- * No se agrega .addPage() aquí, ya que se maneja fuera para forzar 1 alumno por página.
+ *   - Imagen (si existe)
+ *
+ * Ajustado para usar la imagen desde la base de datos (archivo_data).
+ * No se agrega .addPage() aquí, se maneja afuera para 1 alumno por página.
  */
 function printAlumno(doc, row) {
   doc.fontSize(12).fillColor('#000');
@@ -46,36 +48,23 @@ function printAlumno(doc, row) {
 
   doc.moveDown(1);
 
-  // Imagen
-  if (row.archivo) {
-    const comprobantePath = path.join(__dirname, '../uploads', row.archivo);
-    if (fs.existsSync(comprobantePath)) {
-      // Verificar que la extensión sea soportada (solo se aceptan JPG/JPEG y PNG)
-      const ext = path.extname(comprobantePath).toLowerCase();
-      if (ext === '.png' || ext === '.jpg' || ext === '.jpeg') {
-        doc.image(comprobantePath, {
-          fit: [400, 500],
-          align: 'left',
-        });
-        doc.moveDown(2);
-      } else {
-        // Si el formato no es compatible, mostramos un mensaje en el PDF
-        doc.fillColor('red').text('Archivo adjunto no es una imagen soportada.');
-        doc.fillColor('#000');
-        doc.moveDown(1);
-      }
-    } else {
-      doc.fillColor('red').text('Comprobante no disponible.');
+  // Imagen desde base de datos
+  if (row.archivo_data) {
+    try {
+      const imgBuffer = Buffer.from(row.archivo_data, 'binary');
+      doc.image(imgBuffer, { fit: [400, 500], align: 'left' });
+      doc.moveDown(2);
+    } catch (err) {
+      doc.fillColor('red').text('Error al mostrar la imagen del comprobante.', { lineGap: 5 });
       doc.fillColor('#000');
       doc.moveDown(1);
     }
   } else {
-    doc.fillColor('red').text('No se adjuntó comprobante.');
+    doc.fillColor('red').text('No se adjuntó comprobante.', { lineGap: 5 });
     doc.fillColor('#000');
     doc.moveDown(2);
   }
 }
-
 
 // Ruta única para generar cualquiera de los reportes
 router.post('/generar', async (req, res) => {
@@ -89,7 +78,10 @@ router.post('/generar', async (req, res) => {
     // Validación en el servidor: la fecha final no puede ser mayor a la fecha actual
     const today = new Date().toISOString().split('T')[0];
     if (fecha_fin > today) {
-      return res.render('reportes', { adminId: req.session.userId, errorMessage: 'La fecha final no puede ser mayor a la fecha actual.' });
+      return res.render('reportes', {
+        adminId: req.session.userId,
+        errorMessage: 'La fecha final no puede ser mayor a la fecha actual.'
+      });
     }
 
     // -----------------------------------------
@@ -97,16 +89,19 @@ router.post('/generar', async (req, res) => {
     // -----------------------------------------
     if (tipo_reporte === 'comprobantes-validados') {
       if (!fecha_inicio || !fecha_fin) {
-        return res.render('reportes', { adminId: req.session.userId, errorMessage: 'Se requieren fechas de inicio y fin para generar el reporte.' });
+        return res.render('reportes', {
+          adminId: req.session.userId,
+          errorMessage: 'Se requieren fechas de inicio y fin para generar el reporte.'
+        });
       }
 
-      // Se compara únicamente la parte de la fecha (sin la hora)
       const query = `
         SELECT
           ra.matricula,
           ra.nombre_nino AS nombre,
           cp.fecha_subida AS fecha_validacion,
-          cp.archivo
+          cp.nombre_archivo,
+          cp.archivo_data
         FROM registro_alumno ra
         INNER JOIN comprobantes_pago cp
           ON ra.id = cp.alumno_id
@@ -117,23 +112,22 @@ router.post('/generar', async (req, res) => {
       const datos = await pool.query(query, [fecha_inicio, fecha_fin]);
 
       if (datos.rows.length === 0) {
-        return res.render('reportes', { adminId: req.session.userId, errorMessage: 'No se encontraron comprobantes validados en el rango de fechas.' });
+        return res.render('reportes', {
+          adminId: req.session.userId,
+          errorMessage: 'No se encontraron comprobantes validados en el rango de fechas.'
+        });
       }
 
-      // Preparar cabeceras para descarga del PDF
       const fileName = `Comprobantes_Validados_${Date.now()}.pdf`;
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
 
-      // Crear el PDF con PDFKit
       const doc = new PDFDocument({ margin: 50 });
       doc.pipe(res);
 
-      // Título
       doc.fontSize(18).text('Reporte de Comprobantes Validados', { align: 'center' });
       doc.moveDown(2);
 
-      // Imprime 1 alumno por página
       datos.rows.forEach((row, index) => {
         printAlumno(doc, row);
         if (index < datos.rows.length - 1) {
@@ -144,106 +138,234 @@ router.post('/generar', async (req, res) => {
       doc.end();
 
     // -----------------------------------------
-    // Otros reportes -> Excel
+    // Reportes Excel
     // -----------------------------------------
     } else {
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('Reporte');
-      let queryResult;
-
-      // Columnas base (se sobrescriben en algunos reportes)
-      worksheet.columns = [
-        { header: 'Curso de Interés', key: 'curso_interes', width: 25 },
-        { header: 'Categoría Horario', key: 'categoria_horario', width: 20 },
-        { header: 'Matrícula', key: 'matricula', width: 15 },
-        { header: 'User ID', key: 'user_id', width: 15 },
-        { header: 'Nombre del Alumno', key: 'nombre', width: 30 },
-        { header: 'Detalles', key: 'detalles', width: 50 },
-      ];
       worksheet.getRow(1).font = { bold: true };
+
+      let queryResult;
 
       switch (tipo_reporte) {
 
         case 'general-alumnos':
-          queryResult = await pool.query(`
-            SELECT
-              curso_interes,
-              categoria_horario,
-              matricula,
-              user_id,
-              nombre_nino AS nombre,
-              'General Info' AS detalles
-            FROM registro_alumno
-            WHERE fecha_registro BETWEEN $1 AND $2
-            ORDER BY curso_interes, categoria_horario
-          `, [fecha_inicio, fecha_fin]);
-          break;
+  worksheet.columns = [
+    { header: 'Curso de Interés', key: 'curso_interes', width: 25 },
+    { header: 'Categoría Horario', key: 'categoria_horario', width: 20 },
+    { header: 'Matrícula', key: 'matricula', width: 15 },
+    { header: 'Nombre del Alumno', key: 'nombre', width: 30 },
+    { header: 'Estado de Inscripción', key: 'estado_inscripcion', width: 20 },
+  ];
 
-        case 'hermanos-inscritos':
-          queryResult = await pool.query(`
-            SELECT
-              curso_interes,
-              categoria_horario,
-              matricula,
-              user_id,
-              nombre_nino AS nombre,
-              nombre_hermano AS detalles
-            FROM registro_alumno
-            WHERE hermano_inscrito = TRUE
-              AND fecha_registro BETWEEN $1 AND $2
-            ORDER BY curso_interes, categoria_horario
-          `, [fecha_inicio, fecha_fin]);
-          break;
+  queryResult = await pool.query(`
+    SELECT 
+      ra.curso_interes,
+      ra.categoria_horario,
+      ra.matricula,
+      ra.nombre_nino AS nombre,
+      COALESCE(
+        CASE 
+          WHEN cp.estado = 'aprobado' THEN 'Inscrito'
+          WHEN cp.estado = 'vencido' THEN 'No Inscrito'
+          WHEN cp.estado = 'rechazado' THEN 'Rechazado'
+          ELSE 'Pendiente'
+        END, 
+        'Pendiente'
+      ) AS estado_inscripcion
+    FROM registro_alumno ra
+    LEFT JOIN (
+      SELECT DISTINCT ON (alumno_id) alumno_id, estado
+      FROM comprobantes_pago
+      ORDER BY alumno_id, fecha_subida DESC
+    ) cp ON ra.id = cp.alumno_id
+    ORDER BY 
+      CASE 
+        WHEN cp.estado = 'aprobado' THEN 1 
+        WHEN cp.estado = 'vencido' THEN 2
+        WHEN cp.estado = 'rechazado' THEN 3
+        ELSE 4 
+      END,
+      ra.curso_interes, 
+      ra.categoria_horario;
+  `);
 
-        case 'alergias':
-          queryResult = await pool.query(`
-            SELECT
-              curso_interes,
-              categoria_horario,
-              matricula,
-              user_id,
-              nombre_nino AS nombre,
-              detalle_alergias AS detalles
-            FROM registro_alumno
-            WHERE alergias = TRUE
-              AND fecha_registro BETWEEN $1 AND $2
-            ORDER BY curso_interes, categoria_horario
-          `, [fecha_inicio, fecha_fin]);
-          break;
+  queryResult.rows.forEach((row, index) => {
+    const newRow = worksheet.addRow({
+      curso_interes: row.curso_interes,
+      categoria_horario: row.categoria_horario,
+      matricula: row.matricula || 'Sin matrícula',
+      nombre: row.nombre,
+      estado_inscripcion: row.estado_inscripcion,
+    });
 
-        case 'alergico-medicamentos':
-          queryResult = await pool.query(`
-            SELECT
-              curso_interes,
-              categoria_horario,
-              matricula,
-              user_id,
-              nombre_nino AS nombre,
-              detalle_medicamento AS detalles
-            FROM registro_alumno
-            WHERE alergico_medicamento = TRUE
-              AND fecha_registro BETWEEN $1 AND $2
-            ORDER BY curso_interes, categoria_horario
-          `, [fecha_inicio, fecha_fin]);
-          break;
+    // Aplicar color de fondo a la celda de "Estado de Inscripción"
+    const estadoCell = newRow.getCell(5); // 5ta columna (Estado de Inscripción)
 
-        case 'enterado-academia':
-          queryResult = await pool.query(`
-            SELECT
-              curso_interes,
-              categoria_horario,
-              matricula,
-              user_id,
-              nombre_nino AS nombre,
-              enterado AS detalles
-            FROM registro_alumno
-            WHERE fecha_registro BETWEEN $1 AND $2
-            ORDER BY curso_interes, categoria_horario
-          `, [fecha_inicio, fecha_fin]);
-          break;
+    switch (row.estado_inscripcion) {
+      case 'Inscrito':
+        estadoCell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: '00FF00' }, // Verde
+        };
+        break;
+      case 'No Inscrito':
+        estadoCell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FF0000' }, // Rojo
+        };
+        break;
+      case 'Rechazado':
+        estadoCell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFFF00' }, // Amarillo
+        };
+        break;
+      default:
+        // No aplica color para 'Pendiente'
+        break;
+    }
+  });
 
+  break;
+
+  case 'hermanos-inscritos':
+  worksheet.columns = [
+    { header: 'Curso de Interés', key: 'curso_interes', width: 25 },
+    { header: 'Categoría Horario', key: 'categoria_horario', width: 20 },
+    { header: 'Matrícula', key: 'matricula', width: 15 },
+    { header: 'Nombre del Alumno', key: 'nombre', width: 30 },
+    { header: 'Nombre del Hermano', key: 'nombre_hermano', width: 30 },
+  ];
+
+  queryResult = await pool.query(`
+    SELECT 
+      curso_interes,
+      categoria_horario,
+      matricula,
+      nombre_nino AS nombre,
+      nombre_hermano -- En lugar de hacer un JOIN, se toma directamente de la tabla
+    FROM registro_alumno
+    WHERE hermano_inscrito IS TRUE
+    ORDER BY curso_interes, categoria_horario;
+  `);
+
+  queryResult.rows.forEach(row => {
+    worksheet.addRow({
+      curso_interes: row.curso_interes,
+      categoria_horario: row.categoria_horario,
+      matricula: row.matricula || 'Sin matrícula',
+      nombre: row.nombre,
+      nombre_hermano: row.nombre_hermano || 'No especificado', // Si no tiene, mostrar "No especificado"
+    });
+  });
+
+  break;
+
+  case 'alergias':
+    worksheet.columns = [
+      { header: 'Curso de Interés', key: 'curso_interes', width: 25 },
+      { header: 'Categoría Horario', key: 'categoria_horario', width: 20 },
+      { header: 'Matrícula', key: 'matricula', width: 15 },
+      { header: 'Nombre del Alumno', key: 'nombre', width: 30 },
+      { header: 'Detalle de Alergias', key: 'detalle_alergias', width: 50 },
+    ];
+  
+    queryResult = await pool.query(`
+      SELECT 
+        curso_interes,
+        categoria_horario,
+        matricula,
+        nombre_nino AS nombre,
+        detalle_alergias
+      FROM registro_alumno
+      WHERE alergias IS TRUE -- Solo alumnos con alergias registradas
+      ORDER BY curso_interes, categoria_horario;
+    `);
+  
+    queryResult.rows.forEach(row => {
+      worksheet.addRow({
+        curso_interes: row.curso_interes,
+        categoria_horario: row.categoria_horario,
+        matricula: row.matricula || 'Sin matrícula',
+        nombre: row.nombre,
+        detalle_alergias: row.detalle_alergias || 'No especificado', // Si es NULL, poner "No especificado"
+      });
+    });
+  
+    break;
+    case 'alergico-medicamentos':
+      worksheet.columns = [
+        { header: 'Curso de Interés', key: 'curso_interes', width: 25 },
+        { header: 'Categoría Horario', key: 'categoria_horario', width: 20 },
+        { header: 'Matrícula', key: 'matricula', width: 15 },
+        { header: 'Nombre del Alumno', key: 'nombre', width: 30 },
+        { header: 'Alérgico a Medicamento', key: 'alergico_medicamento', width: 50 },
+      ];
+    
+      queryResult = await pool.query(`
+        SELECT 
+          curso_interes,
+          categoria_horario,
+          matricula,
+          nombre_nino AS nombre,
+          detalle_medicamento AS alergico_medicamento
+        FROM registro_alumno
+        WHERE alergico_medicamento IS TRUE -- Solo alumnos alérgicos a medicamentos
+        ORDER BY curso_interes, categoria_horario;
+      `);
+    
+      queryResult.rows.forEach(row => {
+        worksheet.addRow({
+          curso_interes: row.curso_interes,
+          categoria_horario: row.categoria_horario,
+          matricula: row.matricula || 'Sin matrícula',
+          nombre: row.nombre,
+          alergico_medicamento: row.alergico_medicamento || 'No especificado', // Si es NULL, poner "No especificado"
+        });
+      });
+    
+      break;
+    
+      case 'enterado-academia':
+        worksheet.columns = [
+          { header: 'Curso de Interés', key: 'curso_interes', width: 25 },
+          { header: 'Categoría Horario', key: 'categoria_horario', width: 20 },
+          { header: 'Matrícula', key: 'matricula', width: 15 },
+          { header: 'Nombre del Alumno', key: 'nombre', width: 30 },
+          { header: '¿Cómo se enteró?', key: 'enterado', width: 50 },
+        ];
+      
+        queryResult = await pool.query(`
+          SELECT 
+            curso_interes,
+            categoria_horario,
+            matricula,
+            nombre_nino AS nombre,
+            COALESCE(enterado, otra_fuente, 'No especificado') AS enterado
+          FROM registro_alumno
+          ORDER BY curso_interes, categoria_horario;
+        `);
+      
+        queryResult.rows.forEach(row => {
+          worksheet.addRow({
+            curso_interes: row.curso_interes,
+            categoria_horario: row.categoria_horario,
+            matricula: row.matricula || 'Sin matrícula',
+            nombre: row.nombre,
+            enterado: row.enterado,
+          });
+        });
+      
+        break;
+      
+        // -------------------------------------
+        // Usuarios Vencidos
+        // -------------------------------------
         case 'usuarios-vencidos':
-          // Definir columnas específicas para este reporte
           worksheet.columns = [
             { header: 'Matrícula', key: 'matricula', width: 15 },
             { header: 'Nombre del Alumno', key: 'nombre', width: 30 },
@@ -251,17 +373,17 @@ router.post('/generar', async (req, res) => {
             { header: 'Fecha de Vencimiento', key: 'fecha_vencimiento', width: 20 },
           ];
           queryResult = await pool.query(`
-            SELECT 
-              ra.matricula, 
-              ra.nombre_nino AS nombre, 
-              'Vencido' AS detalles, 
-              TO_CHAR(MAX(cp.fecha_vencimiento), 'YYYY-MM-DD') AS fecha_vencimiento
-            FROM registro_alumno ra
-            INNER JOIN comprobantes_pago cp 
-              ON ra.id = cp.alumno_id
-            WHERE cp.estado = 'vencido'
-            GROUP BY ra.matricula, ra.nombre_nino
-            ORDER BY MAX(cp.fecha_vencimiento) DESC;
+          SELECT 
+            ra.matricula, 
+            ra.nombre_nino AS nombre, 
+            'Vencido' AS detalles, 
+            cp.fecha_vencimiento::date AS fecha_vencimiento
+          FROM registro_alumno ra
+          INNER JOIN comprobantes_pago cp 
+            ON ra.id = cp.alumno_id
+          WHERE cp.estado = 'vencido'
+          ORDER BY cp.fecha_vencimiento DESC;
+
           `);
           queryResult.rows.forEach(row => {
             worksheet.addRow({
@@ -273,38 +395,53 @@ router.post('/generar', async (req, res) => {
           });
           break;
 
+          
+        // -------------------------------------
+        // Usuarios Aprobados
+        // -------------------------------------
         case 'usuarios-aprobados':
+          // Definimos las columnas que queremos en el Excel (sin 'Correo')
           worksheet.columns = [
-            { header: 'Matrícula', key: 'matricula', width: 15 },
-            { header: 'Nombre del Alumno', key: 'nombre', width: 30 },
-            { header: 'Detalles', key: 'detalles', width: 50 },
-            { header: 'Fecha de Aprobación', key: 'fecha_aprobacion', width: 20 },
+            { header: 'Matrícula',        key: 'matricula',          width: 15 },
+            { header: 'Nombre del Alumno',key: 'alumno',             width: 30 },
+            { header: 'Estado',           key: 'estado',             width: 15 },
+            { header: 'Periodo',          key: 'periodo',            width: 15 },
+            { header: 'Vencimiento',      key: 'fecha_vencimiento',  width: 20 },
           ];
-          queryResult = await pool.query(`
-            SELECT 
-              ra.matricula, 
-              ra.nombre_nino AS nombre, 
-              'Aprobado' AS detalles, 
-              TO_CHAR(MAX(cp.fecha_subida), 'YYYY-MM-DD') AS fecha_aprobacion
+        
+          // Consulta para traer usuarios aprobados
+          // Ajusta a tus columnas reales para periodo y fecha_vencimiento
+          const queryAprobados = `
+            SELECT
+              ra.matricula,
+              ra.nombre_nino AS alumno,
+              cp.estado,
+              cp.periodo,
+              TO_CHAR(cp.fecha_vencimiento, 'DD/MM/YYYY') AS fecha_vencimiento
             FROM registro_alumno ra
             INNER JOIN comprobantes_pago cp 
               ON ra.id = cp.alumno_id
             WHERE cp.estado = 'aprobado'
-            GROUP BY ra.matricula, ra.nombre_nino
-            ORDER BY MAX(cp.fecha_subida) DESC;
-          `);
+            ORDER BY cp.fecha_subida DESC
+          `;
+        
+          queryResult = await pool.query(queryAprobados);
+        
+          // Llenar el Excel con los datos
           queryResult.rows.forEach(row => {
-            if (row.matricula && row.nombre) {
-              worksheet.addRow({
-                matricula: row.matricula,
-                nombre: row.nombre,
-                detalles: row.detalles,
-                fecha_aprobacion: row.fecha_aprobacion,
-              });
-            }
+            worksheet.addRow({
+              matricula:         row.matricula,
+              alumno:            row.alumno,
+              estado:            row.estado,
+              periodo:           row.periodo,
+              fecha_vencimiento: row.fecha_vencimiento,
+            });
           });
           break;
 
+        // -------------------------------------
+        // Usuarios Rechazados
+        // -------------------------------------
         case 'usuarios-rechazados':
           worksheet.columns = [
             { header: 'Matrícula', key: 'matricula', width: 15 },
@@ -312,20 +449,23 @@ router.post('/generar', async (req, res) => {
             { header: 'Detalles', key: 'detalles', width: 50 },
             { header: 'Fecha de Rechazo', key: 'fecha_rechazo', width: 20 },
           ];
+        
           queryResult = await pool.query(`
             SELECT DISTINCT
               ra.matricula, 
               ra.nombre_nino AS nombre, 
               'Rechazado' AS detalles, 
-              TO_CHAR(cp.fecha_subida, 'YYYY-MM-DD') AS fecha_rechazo
+              TO_CHAR(cp.fecha_subida, 'YYYY-MM-DD') AS fecha_rechazo,
+              cp.fecha_subida -- Se agrega para que ORDER BY funcione
             FROM registro_alumno ra
             INNER JOIN comprobantes_pago cp 
               ON ra.id = cp.alumno_id
             WHERE cp.estado = 'rechazado'
             ORDER BY cp.fecha_subida DESC;
           `);
+        
           queryResult.rows.forEach(row => {
-            if (row.matricula && row.nombre) {
+            if (row.nombre) {
               worksheet.addRow({
                 matricula: row.matricula,
                 nombre: row.nombre,
@@ -335,9 +475,13 @@ router.post('/generar', async (req, res) => {
             }
           });
           break;
+        
 
         default:
-          return res.render('reportes', { adminId: req.session.userId, errorMessage: 'Tipo de reporte no válido.' });
+          return res.render('reportes', {
+            adminId: req.session.userId,
+            errorMessage: 'Tipo de reporte no válido.'
+          });
       }
 
       // Forzar la descarga del archivo Excel
@@ -350,7 +494,10 @@ router.post('/generar', async (req, res) => {
     }
   } catch (error) {
     console.error('Error al generar el reporte:', error);
-    return res.render('reportes', { adminId: req.session.userId, errorMessage: 'Error al generar el reporte.' });
+    return res.render('reportes', {
+      adminId: req.session.userId,
+      errorMessage: 'Error al generar el reporte.'
+    });
   }
 });
 

@@ -1,18 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../db'); // Conexión a la base de datos
-const path = require('path');
-const fs = require('fs');
 
-// Función para obtener el último día del mes de la fecha dada
+// Función para obtener el último día del mes en curso
 function ultimoDiaDelMes(fecha) {
-  const temp = new Date(fecha.getTime());
-  // Movemos al siguiente mes
-  temp.setMonth(temp.getMonth() + 1);
-  // Fijamos el día en 1
-  temp.setDate(1);
-  // Restamos 1 día => último día del mes anterior
-  temp.setDate(temp.getDate() - 1);
+  const temp = new Date(fecha.getFullYear(), fecha.getMonth() + 1, 0); // Último día del mes en curso
   return temp;
 }
 
@@ -25,7 +17,7 @@ router.get('/', async (req, res) => {
 
     // Obtener todos los comprobantes
     const comprobantes = await pool.query(`
-      SELECT cp.id, cp.archivo, cp.estado, cp.periodo, cp.fecha_subida, cp.fecha_vencimiento,
+      SELECT cp.id, cp.nombre_archivo, cp.estado, cp.periodo, cp.fecha_subida, cp.fecha_vencimiento,
              ra.nombre_nino, ra.correo_electronico
       FROM comprobantes_pago cp
       INNER JOIN registro_alumno ra ON cp.alumno_id = ra.id
@@ -37,7 +29,6 @@ router.get('/', async (req, res) => {
     const rechazados = comprobantes.rows.filter((comp) => comp.estado === 'rechazado');
     const vencidos = comprobantes.rows.filter((comp) => comp.estado === 'vencido');
 
-    // Si existe un parámetro de error en la query, se envía a la vista
     const error = req.query.error;
 
     res.render('admin_comprobantes', {
@@ -54,59 +45,15 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Ruta para descargar un comprobante (modificada para redirigir en caso de ausencia del archivo)
-router.get('/:id/descargar', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const result = await pool.query('SELECT archivo FROM comprobantes_pago WHERE id = $1', [id]);
-
-    if (result.rows.length === 0) {
-      return res.redirect('/admin/comprobantes?error=Comprobante no encontrado.');
-    }
-
-    const archivo = result.rows[0].archivo;
-    const archivoPath = path.join(__dirname, '../uploads', archivo);
-
-    if (!fs.existsSync(archivoPath)) {
-      // Redirigimos con un mensaje de error si el archivo no existe
-      return res.redirect('/admin/comprobantes?error=El archivo ya no se encuentra en el servidor.');
-    }
-
-    res.download(archivoPath, archivo);
-  } catch (error) {
-    console.error('Error al descargar el comprobante:', error);
-    res.status(500).send('Error al descargar el comprobante.');
-  }
-});
-
-// **Ruta para aprobar un comprobante** (con nueva lógica)
+// **Ruta para aprobar un comprobante (Vence el último día del mes en curso)**
 router.post('/:id/aprobar', async (req, res) => {
   try {
     const { id } = req.params;
     const { periodo } = req.body;
 
     const ahora = new Date();
-    let fechaVencimiento = null;
+    let fechaVencimiento = ultimoDiaDelMes(ahora); // Se establece como el último día del mes en curso
 
-    switch (periodo) {
-      case 'un_minuto':
-        // Suma 1 minuto
-        fechaVencimiento = new Date(ahora.setMinutes(ahora.getMinutes() + 1));
-        break;
-      case 'mensual':
-        // Si hoy es 15/01 => se vence 31/01
-        fechaVencimiento = ultimoDiaDelMes(ahora);
-        break;
-      case 'bimestral':
-        // Ejemplo simple: avanzar 1 mes y forzar fin de ese mes
-        const unMesDespues = new Date(ahora.setMonth(ahora.getMonth() + 1));
-        fechaVencimiento = ultimoDiaDelMes(unMesDespues);
-        break;
-      default:
-        return res.status(400).send('Periodo inválido. Usa un_minuto, mensual o bimestral.');
-    }
-
-    // Obtenemos el comprobante actual para saber el alumno
     const actual = await pool.query('SELECT * FROM comprobantes_pago WHERE id = $1', [id]);
     if (actual.rowCount === 0) {
       return res.status(404).send('Comprobante no encontrado.');
@@ -115,8 +62,7 @@ router.post('/:id/aprobar', async (req, res) => {
     const comprobante = actual.rows[0];
     const alumnoId = comprobante.alumno_id;
 
-    // Antes de aprobar éste, borramos los comprobantes que estén en "rechazado" o "vencido" de ese alumno
-    // para que no se queden "colgados".
+    // Eliminar comprobantes rechazados o vencidos del mismo alumno antes de aprobar el nuevo
     await pool.query(`
       DELETE FROM comprobantes_pago
       WHERE alumno_id = $1
@@ -124,7 +70,7 @@ router.post('/:id/aprobar', async (req, res) => {
         AND id <> $2
     `, [alumnoId, id]);
 
-    // Ahora aprobamos el comprobante actual
+    // Aprobar el comprobante y asignar la fecha de vencimiento correcta
     await pool.query(`
       UPDATE comprobantes_pago
       SET estado = 'aprobado',
@@ -140,12 +86,40 @@ router.post('/:id/aprobar', async (req, res) => {
   }
 });
 
-// Ruta para rechazar un comprobante
+// **Ruta para descargar un comprobante desde la BD**
+router.get('/:id/descargar', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query('SELECT nombre_archivo, archivo_data FROM comprobantes_pago WHERE id = $1', [id]);
+
+    if (result.rows.length === 0) {
+      return res.redirect('/admin/comprobantes?error=Comprobante no encontrado.');
+    }
+
+    const { nombre_archivo, archivo_data } = result.rows[0];
+
+    if (!archivo_data) {
+      return res.redirect('/admin/comprobantes?error=El archivo no se encuentra en la base de datos.');
+    }
+
+    res.set({
+      'Content-Type': 'application/octet-stream',
+      'Content-Disposition': `attachment; filename="${nombre_archivo}"`,
+      'Content-Length': archivo_data.length
+    });
+
+    res.send(archivo_data);
+  } catch (error) {
+    console.error('Error al descargar el comprobante:', error);
+    res.status(500).send('Error al descargar el comprobante.');
+  }
+});
+
+// **Ruta para rechazar un comprobante**
 router.post('/:id/rechazar', async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Actualizamos el estado a "rechazado"
     await pool.query(`
       UPDATE comprobantes_pago
       SET estado = 'rechazado', periodo = NULL, fecha_vencimiento = NULL
@@ -159,29 +133,16 @@ router.post('/:id/rechazar', async (req, res) => {
   }
 });
 
-// Ruta para eliminar comprobantes
+// **Ruta para eliminar un comprobante**
 router.post('/:id/eliminar', async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Obtener el archivo
-    const result = await pool.query('SELECT archivo FROM comprobantes_pago WHERE id = $1', [id]);
+    const result = await pool.query('SELECT nombre_archivo FROM comprobantes_pago WHERE id = $1', [id]);
     if (result.rows.length === 0) {
       return res.status(404).send('Comprobante no encontrado.');
     }
 
-    const archivo = result.rows[0].archivo;
-    const archivoPath = path.join(__dirname, '../uploads', archivo);
-
-    // Eliminar el archivo físico
-    if (fs.existsSync(archivoPath)) {
-      fs.unlinkSync(archivoPath);
-      console.log(`Archivo eliminado: ${archivoPath}`);
-    } else {
-      console.log(`Archivo no encontrado en el sistema: ${archivoPath}`);
-    }
-
-    // Eliminar el registro de la base
     await pool.query('DELETE FROM comprobantes_pago WHERE id = $1', [id]);
 
     res.redirect('/admin/comprobantes');

@@ -64,50 +64,51 @@
       <h2 class="text-2xl font-bold mb-6 text-center text-gray-700">Detalles del Alumno</h2>
       <div id="detalles-alumno" class="space-y-4">
         <!-- Información del alumno -->
-         <!-- Sección para mostrar la matrícula -->
         <div>
-        <label class="block text-sm font-medium text-gray-700">Matrícula:</label>
-         <p class="text-lg font-semibold text-gray-800"><%= alumno.matricula || 'No asignada' %></p>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-700">Categoría y Horario:</label>
-          <p class="text-lg font-semibold text-gray-800"><%= alumno.categoria_horario %></p>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-700">Nombre del Alumno:</label>
-          <p class="text-lg font-semibold text-gray-800"><%= alumno.nombre_nino %></p>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-700">Edad:</label>
-          <p class="text-lg font-semibold text-gray-800"><%= alumno.edad %></p>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-700">Sexo:</label>
-          <p class="text-lg font-semibold text-gray-800"><%= alumno.sexo %></p>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-700">Talla de Camiseta:</label>
-          <p class="text-lg font-semibold text-gray-800"><%= alumno.talla_camiseta %></p>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-700">Estatura:</label>
-          <p class="text-lg font-semibold text-gray-800"><%= alumno.estatura %> cm</p>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-700">Peso (kg):</label>
-          <p class="text-lg font-semibold text-gray-800"><%= alumno.peso %> kg</p>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-700">Centro Educativo:</label>
-          <p class="text-lg font-semibold text-gray-800"><%= alumno.centro_educativo %></p>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-700">Seguro Médico:</label>
-          <p class="text-lg font-semibold text-gray-800"><%= alumno.seguro_medico ? `Sí (${alumno.nombre_seguro})` : 'No' %></p>
-        </div>
+          <label class="block text-sm font-medium text-gray-700">Matrícula:</label>
+           <p class="text-lg font-semibold text-gray-800"><%= alumno.matricula || 'No asignada' %></p>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Categoría y Horario:</label>
+            <p class="text-lg font-semibold text-gray-800"><%= alumno.categoria_horario %></p>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Nombre del Alumno:</label>
+            <p class="text-lg font-semibold text-gray-800"><%= alumno.nombre_nino %></p>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Edad:</label>
+            <p class="text-lg font-semibold text-gray-800"><%= alumno.edad %></p>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Sexo:</label>
+            <p class="text-lg font-semibold text-gray-800"><%= alumno.sexo %></p>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Talla de Camiseta:</label>
+            <p class="text-lg font-semibold text-gray-800"><%= alumno.talla_camiseta %></p>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Estatura:</label>
+            <p class="text-lg font-semibold text-gray-800"><%= alumno.estatura %> cm</p>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Peso (kg):</label>
+            <p class="text-lg font-semibold text-gray-800"><%= alumno.peso %> kg</p>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Centro Educativo:</label>
+            <p class="text-lg font-semibold text-gray-800"><%= alumno.centro_educativo %></p>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Seguro Médico:</label>
+            <p class="text-lg font-semibold text-gray-800"><%= alumno.seguro_medico ? `Sí (${alumno.nombre_seguro})` : 'No' %></p>
+          </div>
+
         <!-- Comprobante de pago -->
         <div class="mt-6">
           <h3 class="text-xl font-semibold text-gray-700">Comprobante de Pago</h3>
+          
           <% if (comprobante) { %>
             <p class="text-sm text-gray-500">Estado del Comprobante:</p>
             <% if (comprobante.estado === 'pendiente') { %>
@@ -122,21 +123,25 @@
             <% } else if (comprobante.estado === 'vencido') { %>
               <span class="status-expired">Comprobante vencido</span>
             <% } %>
+
+            <!-- Botón de descarga corregido -->
             <p class="text-sm text-gray-500 mt-2">Archivo:</p>
-            <a href="/uploads/<%= comprobante.archivo %>" download class="text-blue-600 hover:underline">
+            <a href="/comprobantes/<%= comprobante.id %>/descargar" class="text-blue-600 hover:underline">
               Descargar Comprobante
             </a>
+
           <% } else { %>
             <p class="text-sm text-red-500">No se ha subido ningún comprobante.</p>
           <% } %>
 
+          <!-- Formulario para subir un nuevo comprobante (SOLO IMÁGENES: JPG, JPEG, PNG) -->
           <% if (!comprobante || comprobante.estado === 'rechazado' || comprobante.estado === 'vencido') { %>
             <form action="/comprobantes/<%= alumno.id %>/subir" method="POST" enctype="multipart/form-data" class="mt-4">
-              <label class="block text-sm font-medium text-gray-700 mb-2">Subir nuevo comprobante:</label>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Subir nuevo comprobante (solo imágenes JPG, JPEG, PNG):</label>
               <input 
                 type="file" 
                 name="comprobante" 
-                accept=".jpg,.png,.jpeg,.heic,.raw" 
+                accept=".jpg,.jpeg,.png  ARCHIVOS menores a 2 megas" 
                 class="mb-4" 
                 required>
               <button type="submit" class="custom-button text-white py-2 px-4 rounded-md">Subir Comprobante</button>
@@ -144,6 +149,7 @@
           <% } %>
         </div>
       </div>
+
       <button onclick="window.location.href='/panel-principal/<%= userId %>'" class="custom-button text-white py-3 px-6 rounded-md font-semibold w-full mt-6">Volver al Panel Principal</button>
     </section>
   </main>
@@ -153,27 +159,5 @@
       <p>Academia Halcones UV - Todos los derechos reservados 2024</p>
     </div>
   </footer>
-
-  <script>
-    const countdownElement = document.getElementById('countdown');
-    if (countdownElement) {
-      <% if (comprobante && comprobante.estado === 'validado' && comprobante.fecha_vencimiento) { %>
-        const fechaVencimiento = new Date('<%= comprobante.fecha_vencimiento %>');
-        const interval = setInterval(() => {
-          const ahora = new Date();
-          const tiempoRestante = fechaVencimiento - ahora;
-          if (tiempoRestante <= 0) {
-            countdownElement.textContent = 'El periodo ha finalizado';
-            clearInterval(interval);
-          } else {
-            const diasRestantes = Math.ceil(tiempoRestante / (1000 * 60 * 60 * 24));
-            countdownElement.textContent = `Tiempo restante: ${diasRestantes} días`;
-          }
-        }, 1000);
-      <% } else { %>
-        countdownElement.textContent = 'No hay un comprobante registrado.';
-      <% } %>
-    }
-  </script>
 </body>
 </html>

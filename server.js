@@ -1,7 +1,9 @@
 const express = require('express');
 const session = require('express-session');
 const pgSession = require('connect-pg-simple')(session);
+const fs = require('fs');
 const path = require('path');
+const https = require('https');
 const cron = require('node-cron');
 const pool = require('./db');
 require('dotenv').config(); // Cargar variables de entorno
@@ -16,9 +18,9 @@ const adminComprobantesRoutes = require('./routes/admin_comprobantes_routes');
 const reportesRoutes = require('./routes/reportes_routes');
 
 const app = express();
-const PORT = process.env.PORT || 3000; // Usar el puerto de Railway
-// const admin_routestemp = require('./routes/admin_routestemp');
-// app.use('/admin', admin_routestemp);
+const PORT = process.env.PORT || 3000; // HTTP
+const HTTPS_PORT = process.env.HTTPS_PORT || 3443; // HTTPS
+
 console.log("🔍 DATABASE_URL:", process.env.DATABASE_URL);
 
 // Intentar conexión a PostgreSQL antes de iniciar el servidor
@@ -32,7 +34,7 @@ console.log("🔍 DATABASE_URL:", process.env.DATABASE_URL);
   }
 })();
 
-// Agregar esta línea para que Express confíe en el proxy (necesario en producción)
+// Configuración de confianza en proxy (necesario en Railway)
 app.set('trust proxy', 1);
 
 app.use(express.json());
@@ -119,9 +121,21 @@ app.get('/admin-panel/:adminId', verificarAdmin, async (req, res) => {
   }
 });
 
-// Iniciar el servidor
+// HTTPS con certificados locales (en producción, Railway maneja esto automáticamente)
+if (fs.existsSync('./certs/server.key') && fs.existsSync('./certs/server.cert')) {
+  const httpsOptions = {
+    key: fs.readFileSync('./certs/server.key'),
+    cert: fs.readFileSync('./certs/server.cert'),
+  };
+
+  https.createServer(httpsOptions, app).listen(HTTPS_PORT, () => {
+    console.log(`🔒 Servidor HTTPS corriendo en https://localhost:${HTTPS_PORT}`);
+  });
+}
+
+// Iniciar servidor HTTP
 app.listen(PORT, () => {
-  console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
+  console.log(`🚀 Servidor HTTP corriendo en http://localhost:${PORT}`);
 });
 
 // ─────────────────────────────────────────────────────────
@@ -129,20 +143,35 @@ app.listen(PORT, () => {
 // ─────────────────────────────────────────────────────────
 cron.schedule('1 0 * * *', async () => {
   try {
-    console.log('🔄 Revisando comprobantes vencidos...');
+    console.log('🔄 Ejecutando cron job para actualizar comprobantes vencidos...');
+    
     const result = await pool.query(`
       UPDATE comprobantes_pago
       SET estado = 'vencido'
-      WHERE estado = 'aprobado'
+      WHERE estado IN ('aprobado', 'validado')
         AND fecha_vencimiento < NOW()
     `);
 
-    if (result.rowCount > 0) {
-      console.log(`✅ Se actualizaron ${result.rowCount} comprobantes a vencido.`);
-    } else {
-      console.log('🔹 No hay comprobantes para actualizar a vencido.');
-    }
+    console.log(`✅ Se actualizaron ${result.rowCount} comprobantes a vencido.`);
   } catch (error) {
     console.error('❌ Error al actualizar comprobantes vencidos:', error);
+  }
+});
+
+// ─────────────────────────────────────────────────────────
+//   CRON: Eliminar comprobantes del mes anterior después de 5 días
+// ─────────────────────────────────────────────────────────
+cron.schedule('5 0 6 * *', async () => { 
+  try {
+    console.log('🗑 Eliminando comprobantes vencidos del mes anterior...');
+
+    const result = await pool.query(`
+      DELETE FROM comprobantes_pago
+      WHERE estado = 'vencido' AND fecha_subida < date_trunc('month', CURRENT_DATE)
+    `);
+
+    console.log(`✅ Eliminados ${result.rowCount} comprobantes vencidos.`);
+  } catch (error) {
+    console.error('❌ Error al eliminar comprobantes vencidos:', error);
   }
 });
